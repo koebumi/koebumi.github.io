@@ -11,7 +11,7 @@ await page.setViewport({ width: w, height: h, deviceScaleFactor: 1, isMobile: w 
 const errors = [];
 page.on("pageerror", (e) => errors.push(e.message));
 page.on("console", (m) => { if (m.type() === "error") errors.push(m.text()); });
-await page.goto(pathToFileURL(file).href, { waitUntil: "networkidle0", timeout: 60000 });
+await page.goto(/^https?:/.test(file) ? file : pathToFileURL(file).href, { waitUntil: "networkidle2", timeout: 90000 });
 await page.evaluate(async () => { await document.fonts.ready; });
 await new Promise((r) => setTimeout(r, Number(wait) * 1000));
 for (const spec of scrolls.split(",")) {
