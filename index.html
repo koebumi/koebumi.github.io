@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Koebumi — 話すだけで、整った日本語に。</title>
-<meta name="description" content="Fnキーを押して話すと、言いよどみや言い直しを取り除いた日本語が、どのアプリにも入ります。Claude Codeにも声で指示できます。無料・オープンソースのmacOSアプリ。">
+<title>Koebumi — Claude Codeに、声で指示する。</title>
+<meta name="description" content="Fnキーを押して話すと、言いよどみを除いた指示がClaude CodeやCodexに入ります。許可の確認への返事、スラッシュコマンド、ファイル名も声で。メールやチャットの文章も整える、無料・オープンソースのmacOSアプリ。">
 <link rel="canonical" href="https://koebumi.github.io/">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://koebumi.github.io/">
-<meta property="og:title" content="Koebumi — 話すだけで、整った日本語に。">
-<meta property="og:description" content="Fnキーを押して話すだけ。言いよどみや言い直しを取り除いた日本語が、どのアプリにも入ります。無料・オープンソース。">
+<meta property="og:title" content="Koebumi — Claude Codeに、声で指示する。">
+<meta property="og:description" content="許可の確認への返事も、スラッシュコマンドも、ファイル名も声で。メールやチャットの文章も同じFnキーで整います。無料・オープンソースのmacOSアプリ。">
 <meta property="og:image" content="https://koebumi.github.io/assets/og.png">
 <meta property="og:locale" content="ja_JP">
 <meta name="twitter:card" content="summary_large_image">
@@ -23,8 +23,8 @@
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap"></noscript>
 <style>
-  /* 白い地に墨の文字。見出しは墨と灰の 2 色。見本は、アイコンの青緑とくちばしのオレンジを溶かした柔らかい地に白いカードで置く。
-     色の約束: オレンジ = 取り除く・直す言葉、青緑 = Koebumi が入力した言葉 */
+  /* 白い地に墨の文字。見出しは墨と灰の 2 色。見本は、アイコンの青緑とくちばしのオレンジを溶かした柔らかい地に置く。
+     色の約束: オレンジ = 取り除く・直す言葉、青緑 = Koebumi が入力した言葉と、命令として受け取った言葉 */
   :root {
     --bg: #ffffff;
     --bg-2: #f6f7f6;
@@ -57,16 +57,18 @@
   .skip:focus { top: 12px; }
   .shell { max-width: 1200px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
   section { position: relative; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   /* 見出し: 墨と灰の 2 色 */
   .h-xl { margin: 0; font-size: clamp(42px, 6.6vw, 96px); font-weight: 500; line-height: 1.12; letter-spacing: -0.025em; word-break: auto-phrase; text-wrap: balance; }
   .h-lg { margin: 0; font-size: clamp(34px, 4.8vw, 68px); font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; word-break: auto-phrase; text-wrap: balance; }
-  .h-md { margin: 0; font-size: clamp(22px, 2vw, 28px); font-weight: 700; line-height: 1.4; letter-spacing: -0.005em; word-break: auto-phrase; }
+  .h-md { margin: 0; font-size: clamp(22px, 2vw, 28px); font-weight: 700; line-height: 1.4; letter-spacing: -0.005em; word-break: auto-phrase; text-wrap: balance; }
   .g { color: var(--gray); }
   .lead { margin: 0; color: var(--mute); font-size: clamp(15.5px, 1.25vw, 18px); line-height: 1.85; word-break: auto-phrase; }
   .center { text-align: center; }
   .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s var(--ease), transform 0.9s var(--ease); }
   .reveal.in { opacity: 1; transform: none; }
+  .tag { display: inline-block; margin-bottom: 14px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--teal); }
 
   /* ボタン */
   .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 50px; padding: 0 26px; border-radius: 999px; background: var(--ink); color: #fff; text-decoration: none; font-weight: 700; font-size: 15px;
@@ -100,35 +102,50 @@
                  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>"); }
   @keyframes drift { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(4%, -3%) rotate(8deg); } }
 
-  /* 1. ファーストビュー */
-  .hero { padding-block: clamp(56px, 9vh, 104px) 0; }
-  .badge { display: inline-flex; align-items: center; gap: 10px; height: 34px; padding: 0 14px 0 6px; border-radius: 999px; background: var(--bg-2); font-size: 13.5px; font-weight: 500; color: var(--ink-2); text-decoration: none; }
-  .badge img { width: 24px; height: 24px; border-radius: 7px; }
-  .hero .h-xl { margin-top: 26px; }
-  .hero .lead { margin: 24px auto 0; max-width: 34em; }
-  .hero .cta { margin-top: 34px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .hero .meta { margin-top: 16px; font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
-  .stage { margin-top: clamp(48px, 7vh, 80px); height: clamp(420px, 44vw, 600px); display: grid; place-items: center; }
-  .win { position: relative; width: min(680px, 86%); background: var(--card); border-radius: 18px; box-shadow: var(--shadow); overflow: hidden; }
-  .win .bar { height: 44px; display: flex; align-items: center; gap: 7px; padding: 0 16px; border-bottom: 1px solid var(--line); position: relative; }
-  .win .bar i { width: 11px; height: 11px; border-radius: 50%; background: #dde3e3; display: block; }
-  .win .bar span { position: absolute; left: 0; right: 0; text-align: center; font-size: 13px; color: var(--mute); pointer-events: none; }
-  .win .field { display: flex; gap: 20px; align-items: center; padding: 12px 22px; border-bottom: 1px solid var(--line); font-size: 13px; color: var(--mute); }
-  .win .field i { display: block; height: 8px; border-radius: 4px; background: #eceff0; }
-  .win .body { min-height: 120px; padding: 22px 22px 26px; font-size: clamp(17px, 1.7vw, 22px); font-weight: 700; }
-  .said-card { position: absolute; display: flex; gap: 12px; align-items: flex-start; max-width: min(520px, 80%); padding: 14px 18px; border-radius: 16px; background: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow); font-size: clamp(14px, 1.3vw, 16.5px); line-height: 1.6; color: var(--ink-2); }
-  .said-card .lab { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--mute); margin-bottom: 2px; }
+  /* 話した言葉の印 */
   .mic-i { width: 30px; height: 30px; border-radius: 50%; background: #16171a; display: grid; place-items: center; flex: none; margin-top: 2px; }
   .mic-i svg { width: 15px; height: 15px; }
   .hl-f { background: var(--orange-soft); border-radius: 4px; padding: 0 2px; transition: color 0.4s; }
   .hl-f.x { text-decoration: line-through; text-decoration-color: var(--orange); text-decoration-thickness: 2px; color: #8f9c9e; }
-  .caret { display: inline-block; width: 2px; height: 1.05em; background: var(--teal); vertical-align: -0.16em; margin-left: 2px; }
-  .vbar { position: absolute; left: 50%; bottom: 8%; width: 150px; height: 52px; margin-left: -75px; border-radius: 26px; background: rgba(255, 255, 255, 0.86);
+  .hl-c { background: var(--teal-soft); color: var(--teal-deep); border-radius: 4px; padding: 0 3px; font-weight: 700; }
+
+  /* ターミナル（行ごとに組む。長い行は省略して、見本の高さを変えない） */
+  .term { width: min(560px, 100%); background: #12171a; border-radius: 18px; overflow: hidden; box-shadow: 0 30px 80px rgba(15, 35, 40, 0.28); text-align: left; }
+  .term .bar { height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 14px; border-bottom: 1px solid #21292d; position: relative; }
+  .term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2c363b; display: block; }
+  .term .bar span { position: absolute; left: 0; right: 0; text-align: center; font-family: var(--mono); font-size: 12px; color: #7e8f94; pointer-events: none; }
+  .term .scr { padding: 18px 22px 22px; font-family: var(--mono); font-size: clamp(12px, 1.05vw, 14.5px); line-height: 1.85; color: #e9eff1; }
+  .term .ln { min-height: 1.85em; white-space: pre-wrap; word-break: break-word; }
+  .term .ln.cut { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
+  .term .ln.box { border-top: 1px solid #2f3a3f; border-bottom: 1px solid #2f3a3f; padding: 3px 0; margin: 2px 0; }
+  .term .ln.rule { border-top: 1px solid #2f3a3f; padding-top: 4px; margin-top: 2px; }
+  .t-dim { color: #7e8f94; } .t-or { color: var(--orange); } .t-te { color: #84cad5; } .t-ok { color: #7fd1a1; }
+  .t-sel { background: rgba(254, 111, 71, 0.26); border-radius: 4px; }
+  .t-fn { background: rgba(132, 202, 213, 0.18); color: #bfe6ec; border-radius: 4px; }
+  .cur { display: inline-block; width: 0.6em; height: 1.15em; background: #84cad5; vertical-align: -0.22em; }
+  .enter { display: inline-block; font-size: 0.85em; line-height: 1.5; padding: 0 8px; border: 1px solid #3a474c; border-bottom-width: 3px; border-radius: 6px; color: #e9eff1; }
+
+  /* 1. ファーストビュー */
+  .hero { padding-block: clamp(40px, 6vh, 80px) 0; }
+  .badge { display: inline-flex; align-items: center; gap: 10px; height: 34px; padding: 0 14px 0 6px; border-radius: 999px; background: var(--bg-2); font-size: 13.5px; font-weight: 500; color: var(--ink-2); text-decoration: none; }
+  .badge img { width: 24px; height: 24px; border-radius: 7px; }
+  .hero .h-xl { margin-top: 22px; font-size: clamp(42px, 6vw, 88px); }
+  .hero .lead { margin: 24px auto 0; max-width: 36em; text-wrap: balance; }
+  .hero .cta { margin-top: 34px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+  .hero .meta { margin-top: 16px; font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
+  .stage { margin-top: clamp(36px, 5vh, 60px); padding: clamp(20px, 3vw, 34px) clamp(12px, 3vw, 40px) clamp(22px, 3vw, 34px); display: flex; flex-direction: column; align-items: center; }
+  .said-zone { position: relative; z-index: 3; width: min(780px, 100%); min-height: 104px; display: flex; align-items: flex-end; justify-content: flex-start; padding-left: clamp(0px, 3vw, 36px); margin-bottom: -22px; }
+  .said-card { display: flex; gap: 12px; align-items: flex-start; max-width: min(560px, 100%); padding: 14px 18px; border-radius: 16px; background: rgba(255, 255, 255, 0.94); box-shadow: var(--shadow); font-size: clamp(14px, 1.3vw, 16.5px); line-height: 1.6; color: var(--ink-2); text-align: left; }
+  .said-card .lab { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--mute); margin-bottom: 2px; }
+  .hero-t { width: min(780px, 100%); }
+  .hero-t .bar span { text-align: right; padding-right: 18px; }
+  .hero-t .scr { min-height: calc(14 * 1.85em + 40px); padding-top: 30px; transition: opacity 0.4s; }
+  .vbar { margin-top: 18px; width: 150px; height: 52px; border-radius: 26px; background: rgba(255, 255, 255, 0.86);
           box-shadow: 0 12px 34px rgba(15, 35, 40, 0.14), inset 0 1px 0 #fff; display: flex; align-items: center; gap: 14px; padding-left: 9px; }
   .vbar .mic-i { width: 34px; height: 34px; margin: 0; }
   .vbar .bars { position: relative; width: 80px; height: 52px; }
   .vbar .bars i { position: absolute; top: 50%; width: 2.5px; border-radius: 2px; background: #0b0d12; }
-  .fn { position: absolute; left: 7%; bottom: 10%; width: 76px; height: 62px; border-radius: 16px; background: linear-gradient(#fff, #eef1f1); display: grid; place-items: center; font-weight: 900; font-size: 24px;
+  .fn { position: absolute; left: 4%; bottom: 9%; width: 76px; height: 62px; border-radius: 16px; background: linear-gradient(#fff, #eef1f1); display: grid; place-items: center; font-weight: 900; font-size: 24px;
         box-shadow: 0 7px 0 #d4dbdc, 0 18px 40px rgba(15, 35, 40, 0.14); }
   .facts { margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
   .fact { background: var(--bg-2); border-radius: 22px; padding: 22px 26px 24px; min-width: 0; }
@@ -136,29 +153,10 @@
   .fact .v { margin-top: 4px; font-size: clamp(30px, 3.4vw, 46px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
   .fact .v small { font-size: 0.42em; font-weight: 500; color: var(--mute); margin-left: 6px; letter-spacing: 0; }
 
-  /* 2. どのアプリでも */
-  .apps { padding-block: clamp(110px, 16vh, 180px) 0; }
-  .apps .head { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 32px; align-items: end; }
-  .strip { margin-top: 40px; padding: 22px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .chip { display: inline-flex; align-items: center; gap: 10px; height: 56px; padding: 0 20px 0 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 1px 2px rgba(15, 35, 40, 0.06); font-weight: 700; font-size: 15px; }
-  .chip .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--teal-soft); color: var(--teal); }
-  .chip .ic svg { width: 19px; height: 19px; }
-
-  /* 3. 動画 */
-  .film { padding-block: clamp(110px, 16vh, 180px) 0; }
-  .film .frame { margin-top: 44px; position: relative; border-radius: clamp(18px, 2.2vw, 30px); overflow: hidden; aspect-ratio: 16 / 9; background: #f2f4f3; box-shadow: var(--shadow); }
-  .film video { width: 100%; height: 100%; object-fit: cover; }
-  .sound { position: absolute; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 999px; border: 0; cursor: pointer;
-           background: rgba(255, 255, 255, 0.92); color: var(--ink); font: 700 13.5px var(--display); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14); }
-  .sound svg { width: 17px; height: 17px; }
-
-  /* 4. 整える（左に説明、右に見本） */
-  .polish { padding-block: clamp(120px, 18vh, 200px) 0; }
+  /* 左に説明、右に見本 */
   .rows { margin-top: clamp(56px, 9vh, 96px); display: flex; flex-direction: column; gap: clamp(56px, 9vh, 110px); }
   .row { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
   .row .t .lead { margin-top: 12px; font-size: 15.5px; }
-  .row .t .h-lg { font-size: clamp(30px, 3.4vw, 50px); margin-top: 4px; }
-  .tag { display: inline-block; margin-bottom: 14px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--teal); }
   .demo { min-height: clamp(300px, 30vw, 380px); display: grid; place-items: center; padding: clamp(24px, 4vw, 48px) clamp(16px, 3vw, 40px); }
   .pair { position: relative; width: min(520px, 100%); }
   .pair .a { position: relative; z-index: 2; display: flex; gap: 12px; padding: 16px 18px; border-radius: 16px; background: #fff; box-shadow: var(--shadow); font-size: clamp(14px, 1.25vw, 16px); line-height: 1.65; color: var(--ink-2); }
@@ -167,12 +165,56 @@
              opacity: 0; transform: translateY(14px); transition: opacity 0.7s var(--ease) 0.5s, transform 0.7s var(--ease) 0.5s; }
   .pair .b .lab { display: block; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; color: var(--teal); margin-bottom: 4px; }
   .pair .b ol { margin: 4px 0 0; padding-left: 1.3em; }
-  .pair .x { background: var(--orange-soft); border-radius: 4px; padding: 0 2px; text-decoration-line: line-through; text-decoration-color: transparent; text-decoration-thickness: 2px; transition: text-decoration-color 0.4s 0.2s, color 0.4s 0.2s; }
-  .in .pair .x { text-decoration-color: var(--orange); color: #66787b; }
+  .x { background: var(--orange-soft); border-radius: 4px; padding: 0 2px; text-decoration-line: line-through; text-decoration-color: transparent; text-decoration-thickness: 2px; transition: text-decoration-color 0.4s 0.2s, color 0.4s 0.2s; }
+  .in .x { text-decoration-color: var(--orange); color: #66787b; }
   .in .pair .b { opacity: 1; transform: none; }
-  .pair .new { background: linear-gradient(transparent 58%, var(--teal-soft) 58%); }
+  .new { background: linear-gradient(transparent 58%, var(--teal-soft) 58%); }
+  .fnm { font-family: var(--mono); font-weight: 500; font-size: 0.92em; background: var(--teal-soft); color: var(--teal-deep); border-radius: 5px; padding: 1px 5px; }
+  .ent { display: inline-block; font-family: var(--mono); font-size: 0.68em; font-weight: 500; vertical-align: 0.15em; margin-left: 6px; padding: 1px 8px; border: 1px solid #cdd6d7; border-bottom-width: 3px; border-radius: 7px; background: #fff; color: var(--ink); }
 
-  /* 5. タイル */
+  /* 2. Claude Code・Codex */
+  .agent { padding-block: clamp(110px, 16vh, 180px) 0; }
+  .agent .head { max-width: 46em; margin: 0 auto; }
+  .agent .head .lead { margin: 22px auto 0; max-width: 36em; }
+  .permw { position: relative; width: min(520px, 100%); padding-top: 22px; }
+  .said-chip { position: absolute; right: -6px; top: 0; z-index: 2; display: flex; gap: 10px; align-items: center; padding: 8px 18px 8px 8px; border-radius: 999px; background: #fff; box-shadow: var(--shadow); font-weight: 700; font-size: 15px; }
+  .said-chip .mic-i { width: 28px; height: 28px; margin: 0; }
+  .mini-t { width: 100%; }
+  .mini-t .scr { font-size: clamp(11.5px, 0.95vw, 13px); padding: 16px 18px 18px; }
+  .slash { width: min(500px, 100%); display: grid; gap: 10px; }
+  .sl { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #fff; border-radius: 14px; box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05); font-size: 14.5px; color: var(--ink-2);
+        opacity: 0; transform: translateY(10px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
+  .sl .ar { margin-left: auto; color: var(--orange); }
+  .sl code { font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--teal-deep); background: var(--teal-soft); border-radius: 6px; padding: 2px 9px; white-space: nowrap; }
+  .sl em { font-style: normal; font-size: 11.5px; color: var(--mute); background: var(--bg-2); border-radius: 6px; padding: 1px 7px; white-space: nowrap; }
+  .in .sl { opacity: 1; transform: none; }
+  .in .sl:nth-child(2) { transition-delay: 0.12s; } .in .sl:nth-child(3) { transition-delay: 0.24s; } .in .sl:nth-child(4) { transition-delay: 0.36s; }
+  .fnames { width: min(520px, 100%); display: grid; gap: 12px; }
+  .fx { background: #fff; border-radius: 16px; padding: 14px 18px; box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05); }
+  .fx .s { display: block; font-size: 13.5px; color: var(--mute); }
+  .fx .o { display: block; margin-top: 4px; font-size: clamp(15px, 1.35vw, 17px); font-weight: 700; }
+  .notes3 { margin-top: clamp(56px, 9vh, 96px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .note { background: var(--bg-2); border-radius: 22px; padding: 24px 26px; min-width: 0; }
+  .note h3 { margin: 0; font-size: 18px; font-weight: 700; word-break: auto-phrase; }
+  .note p { margin: 8px 0 0; font-size: 14.5px; color: var(--mute); line-height: 1.8; word-break: auto-phrase; }
+
+  /* 3. 普段の文章 */
+  .polish { padding-block: clamp(120px, 18vh, 200px) 0; }
+  .polish .head .lead { margin: 22px auto 0; max-width: 34em; }
+  .strip { margin-top: 40px; padding: 22px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .chip { display: inline-flex; align-items: center; gap: 10px; height: 56px; padding: 0 20px 0 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 1px 2px rgba(15, 35, 40, 0.06); font-weight: 700; font-size: 15px; }
+  .chip .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--teal-soft); color: var(--teal); }
+  .chip .ic svg { width: 19px; height: 19px; }
+  .exs { margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+  .ex { min-width: 0; display: flex; flex-direction: column; }
+  .ex .demo { min-height: 330px; padding: 26px 16px; }
+  .ex .pair .a { font-size: 14px; }
+  .ex .pair .b { font-size: 16.5px; margin-left: 18px; }
+  .ex .tag { margin: 20px 0 6px; }
+  .ex h3 { margin: 0; font-size: 20px; font-weight: 700; word-break: auto-phrase; }
+  .ex p { margin: 6px 0 0; color: var(--mute); font-size: 14.5px; line-height: 1.8; word-break: auto-phrase; }
+
+  /* 4. タイル */
   .bento { padding-block: clamp(120px, 18vh, 200px) 0; }
   .tiles { margin-top: clamp(44px, 7vh, 72px); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px; }
   .tile { background: var(--bg-2); border-radius: 26px; padding: 28px; min-width: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
@@ -201,10 +243,7 @@
   .ctx .scr b { background: var(--teal-soft); border-radius: 4px; padding: 0 3px; color: var(--ink); }
   .ctx .res { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 700; justify-content: center; }
   .ctx .res s { text-decoration-color: var(--orange); color: var(--mute); font-weight: 500; }
-
-  /* 6. 翻訳と Ask */
-  .more { padding-block: clamp(120px, 18vh, 200px) 0; }
-  .kbd { display: inline-flex; gap: 6px; align-items: center; margin-bottom: 14px; }
+  .kbd { display: inline-flex; gap: 6px; align-items: center; }
   .kbd kbd { font-family: var(--display); font-size: 13px; font-weight: 700; min-width: 30px; height: 30px; padding: 0 9px; display: grid; place-items: center; border-radius: 8px; background: #fff; box-shadow: 0 2px 0 #d9dfe0, 0 0 0 1px #e3e8e8; }
   .ask { width: min(520px, 100%); display: grid; gap: 12px; }
   .ask .doc { background: #fff; border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow); font-size: 15px; line-height: 1.9; color: var(--ink-2); }
@@ -212,32 +251,15 @@
   .ask .cmd { justify-self: end; display: flex; gap: 10px; align-items: center; background: #16171a; color: #fff; border-radius: 999px; padding: 8px 18px 8px 8px; font-size: 14px; font-weight: 700; }
   .ask .cmd .mic-i { background: #fff; width: 28px; height: 28px; margin: 0; }
 
-  /* 7. Claude Code */
-  .agent { padding-block: clamp(120px, 18vh, 200px) 0; }
-  .agent .row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  .term { width: min(560px, 100%); background: #12171a; border-radius: 18px; overflow: hidden; box-shadow: 0 30px 80px rgba(15, 35, 40, 0.28); }
-  .term .bar { height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 14px; border-bottom: 1px solid #21292d; position: relative; }
-  .term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2c363b; display: block; }
-  .term .bar span { position: absolute; left: 0; right: 0; text-align: center; font-family: var(--mono); font-size: 12px; color: #7e8f94; pointer-events: none; }
-  .term pre { margin: 0; padding: 20px 22px 26px; font-family: var(--mono); font-size: clamp(12px, 1.05vw, 14.5px); line-height: 1.85; color: #e9eff1; min-height: calc(19 * 1.85em + 46px); white-space: pre-wrap; word-break: break-word; }
-  .t-dim { color: #7e8f94; } .t-or { color: var(--orange); } .t-te { color: #84cad5; }
-  .t-sel { background: rgba(254, 111, 71, 0.24); border-radius: 4px; }
-  .cur { display: inline-block; width: 0.6em; height: 1.15em; background: #84cad5; vertical-align: -0.22em; }
-  .enter { display: inline-block; font-size: 0.85em; padding: 0 8px; border: 1px solid #3a474c; border-bottom-width: 3px; border-radius: 6px; }
-  .t-mic { width: 0.95em; height: 0.95em; vertical-align: -0.12em; }
-  .cmds { margin: 26px 0 0; padding: 0; list-style: none; display: grid; }
-  .cmds li { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; color: var(--ink-2); }
-  .cmds li:first-child { border-top: 1px solid var(--line); }
-  .cmds li::before { content: ""; position: absolute; left: -14px; top: 14px; bottom: 14px; width: 3px; border-radius: 2px; background: var(--orange); opacity: 0; transition: opacity 0.3s; }
-  .cmds li.on::before { opacity: 1; }
-  .cmds b { flex-basis: 100%; font-size: 15px; font-weight: 700; color: var(--ink); word-break: auto-phrase; }
-  .cmds .to { margin-left: auto; display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
-  .cmds .to::before { content: "→"; color: var(--orange); margin-right: 4px; }
-  .cmds code, .cmds kbd { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg-2); padding: 2px 8px; border-radius: 6px; }
-  .cmds kbd { border: 1px solid var(--line); border-bottom-width: 2px; }
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  /* 5. 動画 */
+  .film { padding-block: clamp(120px, 18vh, 200px) 0; }
+  .film .frame { margin-top: 44px; position: relative; border-radius: clamp(18px, 2.2vw, 30px); overflow: hidden; aspect-ratio: 16 / 9; background: #f2f4f3; box-shadow: var(--shadow); }
+  .film video { width: 100%; height: 100%; object-fit: cover; }
+  .sound { position: absolute; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 999px; border: 0; cursor: pointer;
+           background: rgba(255, 255, 255, 0.92); color: var(--ink); font: 700 13.5px var(--display); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14); }
+  .sound svg { width: 17px; height: 17px; }
 
-  /* 8. プライバシー */
+  /* 6. プライバシー */
   .private { padding-block: clamp(120px, 18vh, 200px) 0; }
   .private .panel { margin-top: clamp(44px, 7vh, 72px); padding: clamp(28px, 5vw, 64px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(22px, 3vw, 40px) clamp(24px, 4vw, 56px); }
   .pv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: start; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(10px); border-radius: 18px; padding: 22px; }
@@ -246,15 +268,16 @@
   .pv h3 { margin: 0; font-size: 18px; font-weight: 700; word-break: auto-phrase; }
   .pv p { margin: 6px 0 0; font-size: 14.5px; color: var(--ink-2); line-height: 1.8; word-break: auto-phrase; }
 
-  /* 9. ショートカット */
+  /* 7. ショートカット */
   .keys { padding-block: clamp(120px, 18vh, 200px) 0; }
   .kgrid { margin-top: clamp(40px, 6vh, 64px); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
   .kc { background: var(--bg-2); border-radius: 22px; padding: 26px 24px; min-width: 0; }
+  .kc .kbd { margin-bottom: 14px; }
   .kc .kbd kbd { height: 40px; min-width: 40px; font-size: 15px; }
   .kc h3 { margin: 6px 0 0; font-size: 18px; font-weight: 700; }
   .kc p { margin: 6px 0 0; font-size: 14px; color: var(--mute); line-height: 1.75; word-break: auto-phrase; }
 
-  /* 10. 入れ方 */
+  /* 8. 入れ方 */
   .install { padding-block: clamp(120px, 18vh, 200px) 0; }
   .steps { margin: clamp(40px, 6vh, 64px) 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; counter-reset: s; }
   .steps li { counter-increment: s; border-top: 2px solid var(--ink); padding-top: 22px; min-width: 0; }
@@ -265,7 +288,7 @@
   .req { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px; }
   .req span { font-size: 13px; color: var(--ink-2); background: var(--bg-2); padding: 6px 12px; border-radius: 999px; }
 
-  /* 11. 最後 */
+  /* 9. 最後 */
   .final { padding-block: clamp(120px, 18vh, 200px) clamp(64px, 10vh, 120px); }
   .final .aura { padding: clamp(56px, 10vw, 128px) 20px; text-align: center; }
   .final img { width: clamp(84px, 9vw, 120px); height: auto; border-radius: 24%; margin: 0 auto 28px; box-shadow: 0 20px 50px rgba(15, 35, 40, 0.2); }
@@ -277,10 +300,14 @@
   footer a { text-decoration: none; }
   footer a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
 
+  @media (max-width: 1000px) {
+    .exs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  }
   @media (max-width: 900px) {
     .links { display: none; }
     .nav .shell { grid-template-columns: 1fr auto; }
-    .apps .head, .row, .agent .row { grid-template-columns: 1fr; }
+    .row { grid-template-columns: 1fr; }
+    .notes3 { grid-template-columns: 1fr; }
     .tiles { grid-template-columns: 1fr; }
     .tile.w2, .tile.w3 { grid-column: auto; }
     .private .panel { grid-template-columns: 1fr; }
@@ -294,17 +321,22 @@
     .facts { grid-template-columns: 1fr; gap: 10px; }
     .fact { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 20px; }
     .fact .v { font-size: 28px; margin: 0; }
-    .stage { height: 440px; }
+    .hero .lead { text-wrap: wrap; }
+    .said-zone { min-height: 118px; }
+    .term .scr { padding-left: 16px; padding-right: 16px; }
     .fn { display: none; }
+    .exs { grid-template-columns: 1fr; }
     .kgrid { grid-template-columns: 1fr; }
+    .sl { flex-wrap: wrap; row-gap: 4px; font-size: 13.5px; padding: 11px 14px; }
+    .sl .s { flex-basis: 100%; }
     .nav .btn { height: 38px; padding: 0 14px; font-size: 13px; }
     .sound { right: 10px; bottom: 10px; height: 34px; font-size: 12px; padding: 0 12px; }
   }
   @media (prefers-reduced-motion: reduce) {
     .reveal { opacity: 1; transform: none; transition: none; }
     .aura::before { animation: none; }
-    .pair .b { opacity: 1; transform: none; transition: none; }
-    .pair .x { text-decoration-color: var(--orange); color: #66787b; transition: none; }
+    .pair .b, .sl { opacity: 1; transform: none; transition: none; }
+    .x { text-decoration-color: var(--orange); color: #66787b; transition: none; }
   }
 </style>
 </head>
@@ -317,8 +349,8 @@
       Koebumi
     </a>
     <nav class="links" aria-label="サイト">
-      <a href="#polish">整える</a>
       <a href="#agent">Claude Code</a>
+      <a href="#polish">普段の文章</a>
       <a href="#private">プライバシー</a>
       <a href="#install">入れ方</a>
     </nav>
@@ -331,8 +363,8 @@
   <section class="hero" id="top">
     <div class="shell center">
       <a class="badge reveal" href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener"><img src="assets/favicon.png" alt="" width="24" height="24">無料・オープンソースのmacOSアプリ</a>
-      <h1 class="h-xl reveal">話すだけで、<br><span class="g">整った日本語に。</span></h1>
-      <p class="lead reveal">Fnキーを押して話すと、言いよどみや言い直しを取り除いた文章が、どのアプリでもカーソルの位置に入ります。Claude Codeにも、声で指示できます。</p>
+      <h1 class="h-xl reveal">Claude Codeに、<br><span class="g">声で指示する。</span></h1>
+      <p class="lead reveal">Fnキーを押して話すだけ。指示の入力も、許可の確認への返事も、スラッシュコマンドも声でできます。メールやチャットの文章も、同じキーで整います。</p>
       <div class="cta reveal">
         <a class="btn" href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>macOS版をダウンロード</a>
         <a class="btn-2" href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.55-1.110-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></svg>GitHub</a>
@@ -340,16 +372,14 @@
       <div class="meta reveal">macOS 26以降・Appleシリコン</div>
     </div>
     <div class="shell">
-      <div class="aura stage reveal" id="stage" role="img" aria-label="話したまま「えーと、明日の三時に、いや四時に伺います」が、メールに「明日の4時に伺います。」と入力される見本">
-        <div class="win">
-          <div class="bar"><i></i><i></i><i></i><span>メール</span></div>
-          <div class="field">宛先<i style="width:140px"></i></div>
-          <div class="field">件名<i style="width:200px"></i></div>
-          <div class="body" id="heroBody"><span class="caret"></span></div>
+      <div class="aura cool stage reveal" id="stage" role="img" aria-label="Claude Codeに「えーと、ストレージマイグレーションテストが落ちてるので、原因を調べて、送信」と話すと、「StorageMigrationTestsが落ちてるので、原因を調べて」と入力して送ります。テストの実行の確認に「いいえ、先にビルドだけして」と話すと、Noを選んでから「先にビルドだけして」と送ります。">
+        <div class="said-zone"><div class="said-card" id="heroSaid"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="lab">話したまま</span><span id="heroSaidText"></span></span></div></div>
+        <div class="term hero-t" aria-hidden="true">
+          <div class="bar"><i></i><i></i><i></i><span>claude — ~/project</span></div>
+          <div class="scr" id="heroTerm"></div>
         </div>
-        <div class="said-card" id="heroSaid" style="left: 6%; top: 9%"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="lab">話したまま</span><span id="heroSaidText"></span></span></div>
-        <div class="fn" id="heroFn" aria-hidden="true">Fn</div>
         <div class="vbar" id="heroBar" aria-hidden="true"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span class="bars" id="heroBars"></span></div>
+        <div class="fn" id="heroFn" aria-hidden="true">Fn</div>
       </div>
       <div class="facts">
         <div class="fact reveal"><div class="k">APIキー</div><div class="v">不要</div></div>
@@ -359,12 +389,64 @@
     </div>
   </section>
 
-  <!-- 2. どのアプリでも -->
-  <section class="apps">
+  <!-- 2. Claude Code・Codex -->
+  <section class="agent" id="agent" aria-labelledby="agent-h">
     <div class="shell">
-      <div class="head">
-        <h2 class="h-lg reveal">どのアプリでも、<br><span class="g">カーソルの位置に。</span></h2>
-        <p class="lead reveal">入力先のアプリを6種類に分けて、文体を変えます。チャットでは句読点を付けず、メールではていねいに書きます。</p>
+      <div class="head center">
+        <span class="tag reveal">CLAUDE CODE ・ CODEX</span>
+        <h2 class="h-lg reveal" id="agent-h">キーボードに、<br><span class="g">手を戻さない。</span></h2>
+        <p class="lead reveal">ターミナルの画面にClaude CodeやCodexが出ていると、話した内容をエージェントへの指示として入力します。下の見本は、すべてKoebumiで実際に試した結果です。</p>
+      </div>
+      <div class="rows">
+        <div class="row reveal">
+          <div class="t"><span class="tag">PERMISSION</span><h3 class="h-md">許可の確認に、声で答える</h3><p class="lead">Claude Codeが「Do you want to proceed?」と聞いてきたら、「はい」「今後は聞かないで」「いいえ」「2番」と話して選べます。「いいえ、先にビルドだけして」と続けると、Noを選んでから続きを送ります。</p></div>
+          <div class="aura demo" id="perm"><div class="permw">
+            <div class="said-chip"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span id="permSaid">「はい」</span></div>
+            <div class="term mini-t" role="img" aria-label="Bashコマンドの実行の確認。「はい」で1. Yes、「今後は聞かないで」で2、「いいえ」で3. No、「2番」で2を選ぶ">
+              <div class="bar"><i></i><i></i><i></i><span>claude — ~/project</span></div>
+              <div class="scr" id="permTerm" aria-hidden="true"></div>
+            </div>
+          </div></div>
+        </div>
+        <div class="row reveal">
+          <div class="t"><span class="tag">SLASH COMMANDS</span><h3 class="h-md">スラッシュコマンドも、自作のスキルも</h3><p class="lead">「スラッシュ コンパクト」と話すと、整形せずに/compactと入力します。~/.claude/skillsや~/.codex/promptsにある自作のコマンドも、名前で呼べます。日本語の名前のスキルは、読みで探します。</p></div>
+          <div class="aura cool demo"><div class="slash">
+            <div class="sl"><span class="s">「スラッシュ コンパクト」</span><span class="ar" aria-hidden="true">→</span><span class="sr">と話すと</span><code>/compact</code></div>
+            <div class="sl"><span class="s">「スラッシュ コードレビュー」</span><span class="ar" aria-hidden="true">→</span><span class="sr">と話すと</span><code>/code-review</code></div>
+            <div class="sl"><span class="s">「スラッシュ グリルミー」</span><span class="ar" aria-hidden="true">→</span><span class="sr">と話すと</span><code>/grill-me</code></div>
+            <div class="sl"><span class="s">「スラッシュ よみやす」</span><span class="ar" aria-hidden="true">→</span><span class="sr">と話すと</span><code>/yomiyasu</code><em>日本語の名前</em></div>
+          </div></div>
+        </div>
+        <div class="row reveal">
+          <div class="t"><span class="tag">FILE NAMES</span><h3 class="h-md">ファイル名は、リポジトリの表記で</h3><p class="lead">話したファイル名を、作業フォルダにある実際の表記に直します。gitのリポジトリで動いているエージェントなら、設定はいりません。</p></div>
+          <div class="aura warm demo"><div class="fnames">
+            <div class="fx"><span class="s">「ストレージドットスウィフトのコメントを見直して」</span><span class="o"><span class="fnm">Storage.swift</span>のコメントを見直して</span></div>
+            <div class="fx"><span class="s">「リードミーファイルに使い方を足して」</span><span class="o"><span class="fnm">README</span> ファイルに使い方を足して</span></div>
+            <div class="fx"><span class="s">「<span class="x">あの、</span>エージェントインプットの関数を分けて」</span><span class="o"><span class="fnm">AgentInput</span>の関数を分けて</span></div>
+          </div></div>
+        </div>
+        <div class="row reveal">
+          <div class="t"><span class="tag">SEND</span><h3 class="h-md">最後に「送信」で、Enterまで</h3><p class="lead">文の最後に「送信」と言うと、入力してからEnterを押します。「送信」だけを話すと、入力欄にある文を送ります。「データを送信」のように文の中で使った語は、命令とみなしません。</p></div>
+          <div class="aura cool demo"><div class="pair">
+            <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="x">えーと、</span>ファイルネームフィクサーのテストを追加して<span class="x">、</span><span class="hl-c">送信</span></span></div>
+            <div class="b"><span class="lab">Claude Codeに入力して送る</span><span class="fnm">FileNameFixer</span>のテストを追加して<span class="ent">↵ Enter</span></div>
+          </div></div>
+        </div>
+      </div>
+      <div class="notes3">
+        <div class="note reveal"><h3>Codexでも</h3><p>整形・ファイル名・スラッシュコマンド・送信は、Codexでも使えます。許可の確認に声で答えられるのは、Claude Codeだけです。</p></div>
+        <div class="note reveal"><h3>tmuxやSSHの先でも</h3><p>プロセスではなく画面の文字で見分けるので、tmuxやherdrの中、SSHの先で動いていても使えます。</p></div>
+        <div class="note reveal"><h3>エージェント向けに整える</h3><p>話した内容がエージェントへの指示であることと、ファイル名やコマンドを話したとおりに書くことを、AIに伝えて整えます。</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3. 普段の文章 -->
+  <section class="polish" id="polish" aria-labelledby="polish-h">
+    <div class="shell">
+      <div class="head center">
+        <h2 class="h-lg reveal" id="polish-h">メールもチャットも、<br><span class="g">同じFnキーで。</span></h2>
+        <p class="lead reveal">どのアプリでも、カーソルの位置に入ります。入力先のアプリを6種類に分けて、文体を変えます。下の見本も、すべてKoebumiで実際に整形した結果です。</p>
       </div>
       <div class="aura cool strip reveal" role="list" aria-label="入力先のアプリの種類">
         <span class="chip" role="listitem"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span>メール</span>
@@ -374,68 +456,54 @@
         <span class="chip" role="listitem"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z"/></svg></span>AIチャット</span>
         <span class="chip" role="listitem"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg></span>その他</span>
       </div>
-    </div>
-  </section>
-
-  <!-- 3. 動画 -->
-  <section class="film" aria-labelledby="film-h">
-    <div class="shell center">
-      <h2 class="h-lg reveal" id="film-h">30秒で、<span class="g">ぜんぶ見る。</span></h2>
-      <div class="frame reveal">
-        <video id="film" src="assets/koebumi-pr.mp4" poster="assets/poster.webp" muted loop playsinline preload="none" aria-label="Koebumi の紹介動画（30秒）"></video>
-        <button class="sound" id="sound" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg><span>音を出す</span></button>
-      </div>
-    </div>
-  </section>
-
-  <!-- 4. 整える -->
-  <section class="polish" id="polish" aria-labelledby="polish-h">
-    <div class="shell">
-      <div class="center">
-        <h2 class="h-lg reveal" id="polish-h">話したままを、<br><span class="g">書いたように。</span></h2>
-        <p class="lead reveal" style="margin: 22px auto 0; max-width: 34em">表記は決まった規則で、言いよどみや言い直しはAIで整えます。下の見本は、すべてKoebumiで実際に整形した結果です。</p>
-      </div>
-      <div class="rows">
-        <div class="row reveal">
-          <div class="t"><span class="tag">FILLER</span><h3 class="h-md">言いよどみを除く</h3><p class="lead">「えーと」「あの」を取り除き、話した中身だけを残します。</p></div>
+      <div class="exs">
+        <article class="ex reveal">
           <div class="aura demo"><div class="pair">
             <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="x">えーと、あの、</span>資料は明日までに送ります</span></div>
             <div class="b"><span class="lab">Koebumiが入力</span>資料は明日までに送ります。</div>
           </div></div>
-        </div>
-        <div class="row reveal">
-          <div class="t"><span class="tag">SELF-CORRECTION</span><h3 class="h-md">言い直しを反映</h3><p class="lead">「いや」「違う」「やっぱり」で言い直したら、言い直した後だけを残します。</p></div>
+          <span class="tag">FILLER</span><h3>言いよどみを除く</h3><p>「えーと」「あの」を取り除き、話した中身だけを残します。</p>
+        </article>
+        <article class="ex reveal">
           <div class="aura warm demo"><div class="pair">
             <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span>会議は<span class="x">火曜日、いや</span>水曜日にしましょう</span></div>
             <div class="b"><span class="lab">Koebumiが入力</span>会議は<span class="new">水曜日</span>にしましょう。</div>
           </div></div>
-        </div>
-        <div class="row reveal">
-          <div class="t"><span class="tag">NOTATION</span><h3 class="h-md">表記をそろえる</h3><p class="lead">数字は算用数字に、補助動詞はひらがなに。AIに任せず決まった規則で直すので、崩れません。</p></div>
+          <span class="tag">SELF-CORRECTION</span><h3>言い直しを反映</h3><p>「いや」「違う」「やっぱり」で言い直したら、言い直した後だけを残します。</p>
+        </article>
+        <article class="ex reveal">
           <div class="aura cool demo"><div class="pair">
             <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span>資料は<span class="x">三時</span>までに送って<span class="x">下さい</span></span></div>
             <div class="b"><span class="lab">Koebumiが入力</span>資料は<span class="new">3時</span>までに送って<span class="new">ください</span>。</div>
           </div></div>
-        </div>
-        <div class="row reveal">
-          <div class="t"><span class="tag">KEIGO</span><h3 class="h-md">メールは、ていねいに</h3><p class="lead">くだけた話し方でも、メールではビジネスの文に直します。</p></div>
+          <span class="tag">NOTATION</span><h3>表記をそろえる</h3><p>数字は算用数字に、補助動詞はひらがなに。AIに任せず決まった規則で直すので、崩れません。</p>
+        </article>
+        <article class="ex reveal">
           <div class="aura demo"><div class="pair">
             <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="x">あ、</span>来週の打ち合わせ<span class="x">なんですけど</span>、<span class="x">ちょっと</span>遅れて参加<span class="x">します</span></span></div>
-            <div class="b"><span class="lab">Koebumiが入力</span>来週の打ち合わせ<span class="new">ですが</span>、<span class="new">少し</span>遅れて参加<span class="new">いたします</span>。</div>
+            <div class="b"><span class="lab">Koebumiが入力（メール）</span>来週の打ち合わせ<span class="new">ですが</span>、<span class="new">少し</span>遅れて参加<span class="new">いたします</span>。</div>
           </div></div>
-        </div>
-        <div class="row reveal">
-          <div class="t"><span class="tag">LISTS</span><h3 class="h-md">箇条書きに</h3><p class="lead">「1つ目は」「2つ目は」と並べて話すと、番号付きの箇条書きにします。</p></div>
+          <span class="tag">KEIGO</span><h3>メールは、ていねいに</h3><p>くだけた話し方でも、メールではビジネスの文に直します。</p>
+        </article>
+        <article class="ex reveal">
           <div class="aura warm demo"><div class="pair">
             <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span>明日やることは3つです。1つ目は資料、2つ目は見積もり、3つ目は日程の確認です</span></div>
             <div class="b"><span class="lab">Koebumiが入力（メモ）</span>明日やることは3つあります。<ol><li>資料</li><li>見積もり</li><li>日程の確認</li></ol></div>
           </div></div>
-        </div>
+          <span class="tag">LISTS</span><h3>箇条書きに</h3><p>「1つ目は」「2つ目は」と並べて話すと、番号付きの箇条書きにします。</p>
+        </article>
+        <article class="ex reveal">
+          <div class="aura cool demo"><div class="pair">
+            <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="x">えーと、</span>明日の会議は4時からです。資料は事前に送ります</span></div>
+            <div class="b" lang="en"><span class="lab" lang="ja">Koebumiが入力（英語）</span>The meeting starts at 4 tomorrow. I will send the materials in advance.</div>
+          </div></div>
+          <span class="tag">TRANSLATE ・ Fn + ⇧</span><h3>話して、そのまま翻訳</h3><p>日本語で話すと、翻訳先の言語で入力します。翻訳先は音声バーで切り替えられます。</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- 5. タイル -->
+  <!-- 4. タイル -->
   <section class="bento" aria-labelledby="bento-h">
     <div class="shell">
       <h2 class="h-lg center reveal" id="bento-h">使うほど、<br><span class="g">あなたの文に近づく。</span></h2>
@@ -470,70 +538,50 @@
           </div></div>
           <h3>画面の表記に合わせる</h3><p>画面に出ている人名と同じ読みなら、その表記で書きます。読んだ画面の文字は保存しません。</p>
         </article>
-      </div>
-    </div>
-  </section>
-
-  <!-- 6. 翻訳と Ask -->
-  <section class="more" aria-labelledby="more-h">
-    <div class="shell">
-      <h2 class="h-lg center reveal" id="more-h">訳す。書き換える。<br><span class="g">聞く。</span></h2>
-      <div class="rows">
-        <div class="row reveal">
-          <div class="t"><div class="kbd"><kbd>Fn</kbd>+<kbd>⇧</kbd></div><h3 class="h-md">話して、そのまま翻訳</h3><p class="lead">日本語で話すと、翻訳先の言語で入力します。翻訳先は音声バーで切り替えられます。</p></div>
-          <div class="aura cool demo"><div class="pair">
-            <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="x">えーと、</span>明日の会議は4時からです。資料は事前に送ります</span></div>
-            <div class="b" lang="en"><span class="lab" lang="ja">Koebumiが入力（英語）</span>The meeting starts at 4 tomorrow. I will send the materials in advance.</div>
-          </div></div>
-        </div>
-        <div class="row reveal">
-          <div class="t"><div class="kbd"><kbd>Fn</kbd>+<kbd>Space</kbd></div><h3 class="h-md">選んだ文を、声で書き換える</h3><p class="lead">文を選んで「もっとていねいに」などと話すと、書き換えます。選んだ文について質問すると、カードで答えます。</p></div>
-          <div class="aura warm demo"><div class="ask">
+        <article class="tile w3 reveal">
+          <div class="vis aura warm"><div class="ask">
             <div class="doc">お世話になっております。<mark>明日の会議ですが、少し遅れて参加します。</mark>資料は先にお送りします。</div>
             <div class="cmd"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#16171a" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>「もっとていねいに」</div>
           </div></div>
-        </div>
+          <h3>選んだ文を、声で書き換える</h3><p>文を選んでFn+Spaceを押し、「もっとていねいに」などと話すと書き換えます。選んだ文について質問すると、カードで答えます。</p>
+        </article>
+        <article class="tile w3 reveal">
+          <div class="vis aura cool"><div class="mini">
+            <div class="m"><span>ON-DEVICE</span><b>Appleのオンデバイスモデル</b></div>
+            <div class="m"><span>CLAUDE</span><b>Claude・Claude Code経由</b></div>
+            <div class="m"><span>OPENAI</span><b>OpenAI互換・Codex経由</b></div>
+          </div></div>
+          <h3>整えるAIを選べる</h3><p>APIキーなしでも、このMacの中で整えます。より高い精度がほしいときは、ClaudeやOpenAI互換のエンジンに切り替えられます。</p>
+        </article>
       </div>
     </div>
   </section>
 
-  <!-- 7. Claude Code -->
-  <section class="agent" id="agent" aria-labelledby="agent-h">
-    <div class="shell">
-      <div class="row">
-        <div class="t reveal">
-          <span class="tag">CLAUDE CODE ・ CODEX</span>
-          <h2 class="h-lg" id="agent-h">エージェントにも、<br><span class="g">声で指示する。</span></h2>
-          <p class="lead" style="margin-top: 18px">ターミナルでClaude CodeやCodexを使っているときは、キーボードに手を戻さずに、コマンドの入力から送信まで声でできます。</p>
-          <ul class="cmds" id="cmds">
-            <li><b>コマンドを入力する</b><span class="say">「スラッシュ コンパクト」<span class="sr">と話すと</span></span><span class="to"><code>/compact</code></span></li>
-            <li><b>Claude Codeの許可の確認に答える</b><span class="say">「はい」<span class="sr">と話すと</span></span><span class="to"><code>1. Yes</code>を選ぶ</span></li>
-            <li><b>入力して、そのまま送る</b><span class="say">「テストを実行して、送信」<span class="sr">と話すと</span></span><span class="to">入力して<kbd>Enter</kbd></span></li>
-            <li><b>ファイル名を、作業フォルダの表記で書く</b><span class="say">「エージェントインプットを直して」<span class="sr">と話すと</span></span><span class="to"><code>AgentInput</code>を直して</span></li>
-          </ul>
-        </div>
-        <div class="aura cool demo reveal"><div class="term" role="img" aria-label="Claude Code に声で指示する例。/compact の入力、許可の確認への返事、入力と送信、ファイル名の表記の修正を順に行う">
-          <div class="bar"><i></i><i></i><i></i><span>claude — ~/project</span></div>
-          <pre id="term" aria-hidden="true"></pre>
-        </div></div>
+  <!-- 5. 動画 -->
+  <section class="film" aria-labelledby="film-h">
+    <div class="shell center">
+      <h2 class="h-lg reveal" id="film-h">30秒で、<span class="g">ぜんぶ見る。</span></h2>
+      <div class="frame reveal">
+        <video id="film" src="assets/koebumi-pr.mp4" poster="assets/poster.webp" muted loop playsinline preload="none" aria-label="Koebumi の紹介動画（30秒）"></video>
+        <button class="sound" id="sound" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg><span>音を出す</span></button>
       </div>
     </div>
   </section>
 
-  <!-- 8. プライバシー -->
+  <!-- 6. プライバシー -->
   <section class="private" id="private" aria-labelledby="private-h">
     <div class="shell">
       <h2 class="h-lg center reveal" id="private-h">プライバシーは、<br><span class="g">最初から。</span></h2>
       <div class="aura panel reveal">
         <div class="pv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span><div><h3>APIキーは、いりません</h3><p>Appleのオンデバイスモデルと、このMacで動く音声認識で使えます。オフラインでも動きます。</p></div></div>
         <div class="pv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V8a4 4 0 0 1 8 0v2"/></svg></span><div><h3>保存はこのMacだけ</h3><p>履歴・録音・辞書・学習内容は、このMacにだけ保存します。履歴を「保存しない」も選べます。</p></div></div>
-        <div class="pv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M3 3l18 18"/></svg></span><div><h3>画面の文字は保存しない</h3><p>人名や用語の表記を合わせるために画面を読みますが、読んだ内容は保存しません。パスワード欄は読みません。</p></div></div>
+        <div class="pv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M3 3l18 18"/></svg></span><div><h3>画面の文字は保存しない</h3><p>人名や用語の表記を合わせるため、Claude Codeを見分けるために画面を読みますが、読んだ内容は保存しません。パスワード欄は読みません。</p></div></div>
         <div class="pv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-.6-9.96A7 7 0 0 1 20 9.5 4.5 4.5 0 0 1 18 18z"/></svg></span><div><h3>クラウドは、選んだときだけ</h3><p>ClaudeやOpenAI互換のエンジンを選んだときは、録音か書き起こした文を、選んだサービスに送ります。</p></div></div>
       </div>
     </div>
   </section>
 
-  <!-- 9. ショートカット -->
+  <!-- 7. ショートカット -->
   <section class="keys" aria-labelledby="keys-h">
     <div class="shell">
       <h2 class="h-lg center reveal" id="keys-h">覚えるキーは、<br><span class="g">ひとつだけ。</span></h2>
@@ -546,7 +594,7 @@
     </div>
   </section>
 
-  <!-- 10. 入れ方 -->
+  <!-- 8. 入れ方 -->
   <section class="install" id="install" aria-labelledby="install-h">
     <div class="shell">
       <h2 class="h-lg reveal" id="install-h">3つの手順で、<br><span class="g">使い始める。</span></h2>
@@ -559,12 +607,12 @@
     </div>
   </section>
 
-  <!-- 11. 最後 -->
+  <!-- 9. 最後 -->
   <section class="final" aria-labelledby="final-h">
     <div class="shell">
       <div class="aura reveal">
         <img src="assets/icon-512.png" alt="" width="120" height="120" loading="lazy">
-        <h2 class="h-lg" id="final-h">今日から、<br><span class="g">声で書く。</span></h2>
+        <h2 class="h-lg" id="final-h">今日から、<br><span class="g">声で指示する。</span></h2>
         <p class="lead">無料・オープンソース（MIT）。macOS 26以降のAppleシリコンのMacで動きます。</p>
         <div class="cta">
           <a class="btn" href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>macOS版をダウンロード</a>
@@ -594,38 +642,88 @@
   const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const $ = (id) => document.getElementById(id);
   const watch = (el, cb, opts) => { if (!("IntersectionObserver" in window)) { cb(true); return; } new IntersectionObserver((es) => es.forEach((e) => cb(e.isIntersecting)), opts).observe(el); };
+  // 前と同じ中身なら書き換えない（毎フレーム描き直さない）
+  const put = (el, html) => { if (el._html !== html) { el.innerHTML = html; el._html = html; } };
+  // ターミナルの行。[クラス, 中身] か 中身だけ
+  const lines = (ls) => ls.map((l) => Array.isArray(l) ? `<div class="ln ${l[0]}">${l[1] || " "}</div>` : `<div class="ln">${l || " "}</div>`).join("");
 
-  // ---- ファーストビューの見本: 話す → 言いよどみに線 → メールに入力。10 秒ごとに繰り返す ----
-  const SAID = [["えーと、", 1], ["明日の", 0], ["三時に、いや", 1], ["四時に伺います", 0]];
-  const total = SAID.reduce((n, s) => n + s[0].length, 0);
+  const P = `<span class="t-te">❯</span> `;
+  const CUR = `<span class="cur"></span>`;
+  const ENT = `  <span class="enter">↵ Enter</span>`;
+  const HEAD = [`<span class="t-or">✱</span> <b>Claude Code</b>`, `<span class="t-dim">  ~/project</span>`, ""];
+  // Claude Code の許可の確認（sel: カーソルの位置、chosen: 選んだ印を付けるか）
+  const OPTIONS = ["1. Yes", "2. Yes, and don't ask again for swift test commands in ~/project", "3. No"];
+  const promptLines = (cmd, sel, chosen) => [
+    ["rule", " <b>Bash command</b>"], ["cut", `   ${cmd}`], "", " Do you want to proceed?",
+    ...OPTIONS.map((o, i) => ["cut", i === sel ? ` <span class="${chosen ? "t-sel" : ""}"><span class="t-te">❯</span> ${o}</span>` : `   <span class="t-dim">${o}</span>`]),
+    `<span class="t-dim"> Esc to cancel</span>`,
+  ];
+
+  // ---- ファーストビュー: 話す → 指示を入力して送る → 確認に「いいえ、先にビルドだけして」と答える。13 秒ごとに繰り返す ----
+  // 文はどれも Koebumi の CLI で実際に出したもの（f: 取り除く言葉、c: 命令として受け取る言葉）
+  const SAY = [
+    [["えーと、", "f"], ["ストレージマイグレーションテストが落ちてるので、原因を調べて", ""], ["、", "f"], ["送信", "c"]],
+    [["いいえ", "c"], ["、先にビルドだけして", ""]],
+  ];
+  const MSG1 = `<span class="t-fn">StorageMigrationTests</span>が落ちてるので、原因を調べて`;
+  const A = { down: 0.3, t0: 0.55, t1: 2.9, up: 3.1, mark: 3.4, input: 3.9, enter: 4.5, sent: 5.2 };
+  const B = { prompt: 5.5, down: 6.3, t0: 6.5, t1: 7.6, up: 7.8, mark: 8.0, choose: 8.4, close: 9.0, enter: 9.6, sent: 10.2 };
+  const LOOP = 13;
   const bars = $("heroBars");
   for (let i = 0; i < 9; i++) bars.appendChild(document.createElement("i"));
-  let heroAt = performance.now(), heroOn = true;
-  function hero(now) {
-    const t = reduce ? 6 : ((now - heroAt) / 1000) % 10;
-    const n = Math.ceil(total * prog(t, 0.6, 2.8));
+  const heroAt = performance.now();
+  let heroOn = true;
+
+  function saidHTML(parts, n, marked) {
     let k = n, html = "";
-    for (const [s, f] of SAID) {
+    for (const [s, kind] of parts) {
       const m = Math.min(s.length, Math.max(0, k)); k -= s.length;
-      if (m > 0) html += f ? `<span class="hl-f${t > 3.3 ? " x" : ""}">${s.slice(0, m)}</span>` : s.slice(0, m);
+      if (m <= 0) continue;
+      const txt = s.slice(0, m);
+      html += kind === "f" ? `<span class="hl-f${marked ? " x" : ""}">${txt}</span>` : kind === "c" ? `<span class="${marked ? "hl-c" : ""}">${txt}</span>` : txt;
     }
-    $("heroSaidText").innerHTML = html || "&nbsp;";
-    const saidCard = $("heroSaid");
-    const sa = Math.min(prog(t, 0.4, 0.8), 1 - prog(t, 9.2, 9.7));
-    saidCard.style.opacity = sa.toFixed(3); saidCard.style.transform = `translateY(${((1 - Math.min(1, prog(t, 0.4, 0.9))) * 12).toFixed(1)}px)`;
-    const typed = t > 3.9;
-    const hl = typed ? Math.max(0, 1 - (t - 3.9) / 1.2) : 0;
-    $("heroBody").innerHTML = typed ? `<span style="background:rgba(220,236,239,${hl.toFixed(2)});border-radius:6px">明日の4時に伺います。</span><span class="caret"></span>` : `<span class="caret"></span>`;
-    $("heroBody").style.opacity = t > 9.5 ? (1 - prog(t, 9.5, 9.9)).toFixed(3) : 1;
+    return html;
+  }
+
+  function hero(now) {
+    const t = reduce ? 8.6 : ((now - heroAt) / 1000) % LOOP;
+    // 話した言葉のカード
+    const first = t < 5.8, S = first ? A : B, parts = SAY[first ? 0 : 1];
+    const len = parts.reduce((n, p) => n + p[0].length, 0);
+    put($("heroSaidText"), saidHTML(parts, Math.ceil(len * prog(t, S.t0, S.t1)), t > S.mark) || "&nbsp;");
+    const vis = first ? Math.min(prog(t, 0.4, 0.75), 1 - prog(t, 4.9, 5.3)) : Math.min(prog(t, 6.15, 6.5), 1 - prog(t, 10.2, 10.6));
+    const card = $("heroSaid");
+    card.style.opacity = vis.toFixed(3);
+    card.style.transform = `translateY(${((1 - vis) * 10).toFixed(1)}px)`;
+
+    // ターミナル
+    const L = [...HEAD];
+    if (t < A.sent) {
+      L.push(["box", P + (t < A.input ? CUR : MSG1 + (t < A.enter ? CUR : ENT))]);
+    } else {
+      L.push(`<span class="t-dim">&gt;</span> ${MSG1}`, "", `<span class="t-ok">⏺</span> Bash(swift test --filter StorageMigrationTests)`);
+      if (t < B.close) {
+        if (t >= B.prompt) L.push(...promptLines("swift test --filter StorageMigrationTests", t < B.choose ? 0 : 2, t >= B.choose));
+      } else if (t < B.sent) {
+        L.push("", ["box", P + "先にビルドだけして" + (t < B.enter ? CUR : ENT)]);
+      } else {
+        L.push("", `<span class="t-dim">&gt;</span> 先にビルドだけして`, "", `<span class="t-ok">⏺</span> Bash(swift build)`);
+      }
+    }
+    const term = $("heroTerm");
+    put(term, lines(L));
+    term.style.opacity = reduce ? 1 : (1 - prog(t, 12.4, 12.85)).toFixed(3);
+
     // Fn キーは話している間だけ押し込む。音声バーは話している間と、整えている間に出る
-    const press = Math.min(prog(t, 0.3, 0.45), 1 - prog(t, 2.9, 3.05));
+    const press = Math.max(Math.min(prog(t, A.down, A.down + 0.15), 1 - prog(t, A.up, A.up + 0.15)), Math.min(prog(t, B.down, B.down + 0.15), 1 - prog(t, B.up, B.up + 0.15)));
     const fn = $("heroFn");
     fn.style.transform = `translateY(${(press * 6).toFixed(1)}px)`;
     fn.style.boxShadow = `0 ${(7 - press * 6).toFixed(1)}px 0 #d4dbdc, 0 18px 40px rgba(15,35,40,0.14), 0 0 0 ${(press * 10).toFixed(1)}px rgba(254,111,71,${(0.22 * press).toFixed(3)})`;
+    const ba = Math.max(Math.min(prog(t, 0.25, 0.6), 1 - prog(t, A.input - 0.1, A.input + 0.3)), Math.min(prog(t, B.down - 0.05, B.down + 0.3), 1 - prog(t, B.choose - 0.1, B.choose + 0.3)));
     const bar = $("heroBar");
-    const ba = Math.min(prog(t, 0.35, 0.7), 1 - prog(t, 3.8, 4.2));
-    bar.style.opacity = ba.toFixed(3); bar.style.transform = `translateY(${((1 - ba) * 10).toFixed(1)}px)`;
-    const listening = t > 0.4 && t < 3.0;
+    bar.style.opacity = ba.toFixed(3);
+    bar.style.transform = `translateY(${((1 - ba) * 10).toFixed(1)}px)`;
+    const listening = (t > A.down && t < A.up) || (t > B.down && t < B.up);
     [...bars.children].forEach((b, i) => {
       let h, w, left, top;
       if (listening) { const c = i - 4, env = Math.exp(-(c * c) / 12); const v = 0.5 + 0.5 * Math.sin(now / 1000 * 12.7 + i * 1.6) * Math.sin(now / 1000 * 4.9 + i * 0.8); h = 3 + 26 * env * v; w = 2.5; left = 4 + i * 8; top = -h / 2; }
@@ -634,48 +732,27 @@
     });
   }
 
-  // ---- Claude Code の見本 ----
-  const STEPS = [
-    { said: "スラッシュ コンパクト", lines: `<span class="t-te">❯</span> /compact` },
-    { said: "はい", prompt: true },
-    { said: "テストを実行して、送信", lines: `<span class="t-te">❯</span> テストを実行して  <span class="enter">↵ Enter</span>` },
-    { said: "エージェントインプットを直して", lines: `<span class="t-te">❯</span> <span class="t-or">AgentInput</span>を直して` },
-  ];
-  // 話した言葉の行の印（マイク）
-  const MIC = `<svg class="t-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>`;
-  const cmdRows = document.querySelectorAll("#cmds li");
-  let termAt = 0, termOn = false, cmdOn = -1;
-  function term(now) {
-    const SEG = 3.0, all = STEPS.length * SEG + 1.5;
-    const t = reduce ? 99 : ((now - termAt) / 1000) % all;
-    let out = `<span class="t-or">✱</span> <b>Claude Code</b>\n<span class="t-dim">~/project</span>\n\n`;
-    STEPS.forEach((s, i) => {
-      const lt = t - i * SEG;
-      if (lt < 0) return;
-      const n = Math.ceil(s.said.length * prog(lt, 0.1, 0.9));
-      const said = `<span class="t-or">${MIC}</span> <span class="t-dim">${s.said.slice(0, n)}</span>\n`;
-      // 許可の確認は、先に確認が出ていて、「はい」と話すと 1. Yes が選ばれる
-      if (s.prompt) {
-        out += `<span class="t-dim">  Bash command  npm test</span>\n  Do you want to proceed?\n  <span class="${lt > 1.2 ? "t-sel" : ""}">❯ 1. Yes</span>\n<span class="t-dim">    2. Yes, and don't ask again\n    3. No</span>\n` + said + "\n";
-        return;
-      }
-      out += said + (lt < 1.2 ? `<span class="t-te">❯</span> <span class="cur"></span>\n\n` : s.lines + "\n\n");
-    });
-    $("term").innerHTML = out;
-    // 左の一覧で、いま見せている行に印を付ける
-    const on = reduce ? -1 : Math.min(STEPS.length - 1, Math.floor(t / SEG));
-    if (on !== cmdOn) { cmdRows.forEach((li, i) => li.classList.toggle("on", i === on)); cmdOn = on; }
+  // ---- 許可の確認の見本: 話した言葉ごとに、選ぶ選択肢が変わる（CLI で確かめた対応） ----
+  const PERM = [["はい", 0], ["今後は聞かないで", 1], ["いいえ", 2], ["2番", 1]];
+  let permAt = 0, permOn = false;
+  function perm(now) {
+    const SEG = 2.6, t = reduce ? 1.5 : (now - permAt) / 1000;
+    const [said, sel] = PERM[Math.floor(t / SEG) % PERM.length], lt = t % SEG;
+    put($("permSaid"), `「${said.slice(0, Math.ceil(said.length * prog(lt, 0.1, 0.5)))}」`);
+    const cmd = "swift test --filter StorageMigrationTests";
+    put($("permTerm"), lines(promptLines(cmd, lt < 0.8 ? 0 : sel, lt >= 0.8)));
   }
 
   function frame(now) {
     if (heroOn) hero(now);
-    if (termOn) term(now);
+    if (permOn) perm(now);
     requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
   watch($("stage"), (v) => { heroOn = v; });
-  watch($("agent"), (v) => { if (v && !termOn) termAt = performance.now(); termOn = v; }, { threshold: 0.2 });
-  if (reduce) { hero(0); term(0); }
+  watch($("perm"), (v) => { if (v && !permOn) permAt = performance.now(); permOn = v; }, { threshold: 0.2 });
+  perm(performance.now());
+  if (reduce) { hero(0); perm(0); }
 
   // 現れる要素（見本の線と入力も、このとき動く）
   document.querySelectorAll(".reveal").forEach((el) => {
