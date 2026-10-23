@@ -214,18 +214,28 @@
 
   /* 7. Claude Code */
   .agent { padding-block: clamp(120px, 18vh, 200px) 0; }
+  .agent .row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
   .term { width: min(560px, 100%); background: #12171a; border-radius: 18px; overflow: hidden; box-shadow: 0 30px 80px rgba(15, 35, 40, 0.28); }
   .term .bar { height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 14px; border-bottom: 1px solid #21292d; position: relative; }
   .term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2c363b; display: block; }
   .term .bar span { position: absolute; left: 0; right: 0; text-align: center; font-family: var(--mono); font-size: 12px; color: #7e8f94; pointer-events: none; }
-  .term pre { margin: 0; padding: 20px 22px 26px; font-family: var(--mono); font-size: clamp(12px, 1.05vw, 14.5px); line-height: 1.85; color: #e9eff1; min-height: 330px; white-space: pre-wrap; word-break: break-word; }
+  .term pre { margin: 0; padding: 20px 22px 26px; font-family: var(--mono); font-size: clamp(12px, 1.05vw, 14.5px); line-height: 1.85; color: #e9eff1; min-height: calc(19 * 1.85em + 46px); white-space: pre-wrap; word-break: break-word; }
   .t-dim { color: #7e8f94; } .t-or { color: var(--orange); } .t-te { color: #84cad5; }
   .t-sel { background: rgba(254, 111, 71, 0.24); border-radius: 4px; }
   .cur { display: inline-block; width: 0.6em; height: 1.15em; background: #84cad5; vertical-align: -0.22em; }
   .enter { display: inline-block; font-size: 0.85em; padding: 0 8px; border: 1px solid #3a474c; border-bottom-width: 3px; border-radius: 6px; }
-  .cmds { margin: 22px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; }
-  .cmds li { display: flex; justify-content: space-between; gap: 14px; align-items: baseline; padding-bottom: 10px; border-bottom: 1px solid var(--line); font-size: 14.5px; color: var(--ink-2); }
-  .cmds code { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg-2); padding: 2px 8px; border-radius: 6px; white-space: nowrap; }
+  .t-mic { width: 0.95em; height: 0.95em; vertical-align: -0.12em; }
+  .cmds { margin: 26px 0 0; padding: 0; list-style: none; display: grid; }
+  .cmds li { position: relative; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 14.5px; color: var(--ink-2); }
+  .cmds li:first-child { border-top: 1px solid var(--line); }
+  .cmds li::before { content: ""; position: absolute; left: -14px; top: 14px; bottom: 14px; width: 3px; border-radius: 2px; background: var(--orange); opacity: 0; transition: opacity 0.3s; }
+  .cmds li.on::before { opacity: 1; }
+  .cmds b { flex-basis: 100%; font-size: 15px; font-weight: 700; color: var(--ink); word-break: auto-phrase; }
+  .cmds .to { margin-left: auto; display: inline-flex; align-items: baseline; gap: 6px; white-space: nowrap; }
+  .cmds .to::before { content: "→"; color: var(--orange); margin-right: 4px; }
+  .cmds code, .cmds kbd { font-family: var(--mono); font-size: 13px; color: var(--ink); background: var(--bg-2); padding: 2px 8px; border-radius: 6px; }
+  .cmds kbd { border: 1px solid var(--line); border-bottom-width: 2px; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
   /* 8. プライバシー */
   .private { padding-block: clamp(120px, 18vh, 200px) 0; }
@@ -270,7 +280,7 @@
   @media (max-width: 900px) {
     .links { display: none; }
     .nav .shell { grid-template-columns: 1fr auto; }
-    .apps .head, .row { grid-template-columns: 1fr; }
+    .apps .head, .row, .agent .row { grid-template-columns: 1fr; }
     .tiles { grid-template-columns: 1fr; }
     .tile.w2, .tile.w3 { grid-column: auto; }
     .private .panel { grid-template-columns: 1fr; }
@@ -494,15 +504,15 @@
         <div class="t reveal">
           <span class="tag">CLAUDE CODE ・ CODEX</span>
           <h2 class="h-lg" id="agent-h">エージェントにも、<br><span class="g">声で指示する。</span></h2>
-          <p class="lead" style="margin-top: 18px">端末にClaude CodeやCodexが出ていたら、エージェントへの指示として整えます。</p>
-          <ul class="cmds">
-            <li><span>「スラッシュ コンパクト」</span><code>/compact</code></li>
-            <li><span>許可の確認に「はい」</span><code>❯ 1. Yes</code></li>
-            <li><span>文の最後に「送信」</span><code>Enter</code></li>
-            <li><span>「エージェントインプットを直して」</span><code>AgentInputを直して</code></li>
+          <p class="lead" style="margin-top: 18px">ターミナルでClaude CodeやCodexを使っているときは、キーボードに手を戻さずに、コマンドの入力から送信まで声でできます。</p>
+          <ul class="cmds" id="cmds">
+            <li><b>コマンドを入力する</b><span class="say">「スラッシュ コンパクト」<span class="sr">と話すと</span></span><span class="to"><code>/compact</code></span></li>
+            <li><b>Claude Codeの許可の確認に答える</b><span class="say">「はい」<span class="sr">と話すと</span></span><span class="to"><code>1. Yes</code>を選ぶ</span></li>
+            <li><b>入力して、そのまま送る</b><span class="say">「テストを実行して、送信」<span class="sr">と話すと</span></span><span class="to">入力して<kbd>Enter</kbd></span></li>
+            <li><b>ファイル名を、作業フォルダの表記で書く</b><span class="say">「エージェントインプットを直して」<span class="sr">と話すと</span></span><span class="to"><code>AgentInput</code>を直して</span></li>
           </ul>
         </div>
-        <div class="aura cool demo reveal"><div class="term" role="img" aria-label="Claude Code に声で指示し、/compact の入力、許可の確認への返事、送信を行う例">
+        <div class="aura cool demo reveal"><div class="term" role="img" aria-label="Claude Code に声で指示する例。/compact の入力、許可の確認への返事、入力と送信、ファイル名の表記の修正を順に行う">
           <div class="bar"><i></i><i></i><i></i><span>claude — ~/project</span></div>
           <pre id="term" aria-hidden="true"></pre>
         </div></div>
@@ -631,7 +641,10 @@
     { said: "テストを実行して、送信", lines: `<span class="t-te">❯</span> テストを実行して  <span class="enter">↵ Enter</span>` },
     { said: "エージェントインプットを直して", lines: `<span class="t-te">❯</span> <span class="t-or">AgentInput</span>を直して` },
   ];
-  let termAt = 0, termOn = false;
+  // 話した言葉の行の印（マイク）
+  const MIC = `<svg class="t-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>`;
+  const cmdRows = document.querySelectorAll("#cmds li");
+  let termAt = 0, termOn = false, cmdOn = -1;
   function term(now) {
     const SEG = 3.0, all = STEPS.length * SEG + 1.5;
     const t = reduce ? 99 : ((now - termAt) / 1000) % all;
@@ -640,13 +653,18 @@
       const lt = t - i * SEG;
       if (lt < 0) return;
       const n = Math.ceil(s.said.length * prog(lt, 0.1, 0.9));
-      out += `<span class="t-or">●</span> <span class="t-dim">${s.said.slice(0, n)}</span>\n`;
-      if (lt < 1.2) { out += `<span class="t-te">❯</span> <span class="cur"></span>\n\n`; return; }
-      out += s.prompt
-        ? `<span class="t-dim">  Bash command  npm test</span>\n  Do you want to proceed?\n  <span class="${lt > 1.5 ? "t-sel" : ""}">❯ 1. Yes</span>\n<span class="t-dim">    2. Yes, and don't ask again\n    3. No</span>\n\n`
-        : s.lines + "\n\n";
+      const said = `<span class="t-or">${MIC}</span> <span class="t-dim">${s.said.slice(0, n)}</span>\n`;
+      // 許可の確認は、先に確認が出ていて、「はい」と話すと 1. Yes が選ばれる
+      if (s.prompt) {
+        out += `<span class="t-dim">  Bash command  npm test</span>\n  Do you want to proceed?\n  <span class="${lt > 1.2 ? "t-sel" : ""}">❯ 1. Yes</span>\n<span class="t-dim">    2. Yes, and don't ask again\n    3. No</span>\n` + said + "\n";
+        return;
+      }
+      out += said + (lt < 1.2 ? `<span class="t-te">❯</span> <span class="cur"></span>\n\n` : s.lines + "\n\n");
     });
     $("term").innerHTML = out;
+    // 左の一覧で、いま見せている行に印を付ける
+    const on = reduce ? -1 : Math.min(STEPS.length - 1, Math.floor(t / SEG));
+    if (on !== cmdOn) { cmdRows.forEach((li, i) => li.classList.toggle("on", i === on)); cmdOn = on; }
   }
 
   function frame(now) {
