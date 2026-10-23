@@ -1,0 +1,637 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Koebumi PR</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;800&display=swap">
+<!--
+  Koebumi の PR 動画（30 秒、1920×1080）。明るい地とアイコンの青緑で、7 つの場面をつなぐ。
+  renderAt(t) は時刻 t（秒）だけで画面を決める。乱数・時計・前の状態は使わない。
+  画面の文章は、Koebumi（Apple オンデバイス）で実際に整形した結果（句読点は初期設定の「、。」）。
+  音声バーは、アプリの明るい版・暗い版と同じ形と色（線 9 本、黙ると点、処理中は点 3 つ）。
+-->
+<style>
+  :root {
+    --bg: #f2f4f4;
+    --bg-blue: #e2edef;
+    --teal: #2b6772;
+    --teal-deep: #1c4a54;
+    --ink: #1b363c;
+    --gray: #8e9ea2;
+    --line: #dfe5e6;
+    --orange: #fe6f47;
+    --white: #ffffff;
+    --sans: "Noto Sans JP", "Hiragino Sans", sans-serif;
+    --mono: "SF Mono", Menlo, "Noto Sans JP", monospace;
+    --shadow: 0 26px 70px rgba(27, 54, 60, 0.13), 0 2px 8px rgba(27, 54, 60, 0.06);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
+  body { font-family: var(--sans); color: var(--ink); -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); transform-origin: 0 0; }
+  .layer { position: absolute; inset: 0; }
+  .abs { position: absolute; }
+  #bgLight { background: radial-gradient(1100px 700px at 50% 42%, #e9edee, transparent 70%), var(--bg); }
+  #bgBlue { background: radial-gradient(1100px 700px at 50% 45%, #eef5f6, transparent 70%), var(--bg-blue); }
+  .teal-fill { background: radial-gradient(1200px 800px at 50% 45%, #2f707b, var(--teal-deep) 75%); }
+  #wipe { position: absolute; border-radius: 50%; overflow: hidden; }
+  #wipe .teal-fill { position: absolute; width: 1920px; height: 1080px; }
+
+  /* 1. 書き起こしのまま */
+  #s1Label { left: 170px; top: 352px; font-size: 26px; font-weight: 700; color: var(--gray); display: flex; align-items: center; gap: 12px; letter-spacing: 0.04em; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--orange); display: inline-block; flex: none; }
+  #s1Text { left: 170px; top: 400px; width: 1600px; height: 120px; font-size: 76px; font-weight: 800; white-space: nowrap; letter-spacing: 0.01em; }
+  #s1Text .seg { position: absolute; left: 0; top: 0; white-space: pre; }
+  .wavy { text-decoration: underline wavy var(--orange); text-decoration-thickness: 3px; text-underline-offset: 14px; }
+  .caret { display: inline-block; width: 4px; height: 0.9em; background: var(--teal); margin-left: 6px; vertical-align: -0.1em; }
+  .floater { position: absolute; font-weight: 700; color: #b7c3c6; white-space: nowrap; }
+  .key { position: absolute; width: 150px; height: 120px; border-radius: 26px; background: linear-gradient(#ffffff, #eef2f3); display: flex; align-items: center; justify-content: center;
+         font-size: 52px; font-weight: 800; color: var(--ink); box-shadow: 0 12px 0 #d4dcde, 0 24px 50px rgba(27, 54, 60, 0.18); }
+
+  /* 2. タイトル */
+  #s2 { color: var(--white); }
+  #bird { position: absolute; left: 860px; top: 120px; width: 200px; height: 200px; }
+  #s2Name { left: 0; right: 0; top: 360px; text-align: center; font-size: 84px; font-weight: 800; letter-spacing: 0.01em; }
+  #s2Copy { left: 0; right: 0; top: 500px; display: flex; justify-content: center; align-items: center; gap: 24px; font-size: 104px; font-weight: 800; letter-spacing: 0.01em; }
+  .inline-key { position: relative; width: 170px; height: 128px; border-radius: 26px; background: linear-gradient(#ffffff, #eef2f3); color: var(--ink); display: flex; align-items: center; justify-content: center;
+                font-size: 60px; font-weight: 800; box-shadow: 0 10px 0 #b9c7ca, 0 24px 50px rgba(0, 0, 0, 0.25); }
+
+  /* ウィンドウ */
+  .win { position: absolute; background: var(--white); border-radius: 22px; box-shadow: var(--shadow); overflow: hidden; }
+  .chrome { height: 54px; border-bottom: 1px solid #edf1f2; position: relative; display: flex; align-items: center; padding: 0 22px; }
+  .lights { display: flex; gap: 9px; } .lights i { width: 13px; height: 13px; border-radius: 50%; background: #d9e0e2; display: block; }
+  .wtitle { position: absolute; left: 0; right: 0; text-align: center; font-size: 22px; font-weight: 500; color: #6f8085; }
+  .field { display: flex; align-items: center; gap: 26px; padding: 18px 34px; border-bottom: 1px solid #edf1f2; font-size: 21px; color: #8a9a9e; }
+  .ph { height: 10px; border-radius: 5px; background: #e5eaeb; }
+  .body { padding: 30px 34px; font-size: 36px; font-weight: 700; line-height: 1.6; }
+  .hl { border-radius: 8px; padding: 0 6px; margin: 0 -6px; }
+  .tag { position: absolute; display: flex; align-items: center; gap: 12px; padding: 12px 24px 12px 20px; border-radius: 999px; background: var(--white); box-shadow: var(--shadow);
+         font-size: 30px; font-weight: 700; white-space: nowrap; }
+  .tag .dot.teal { background: var(--teal); }
+
+  /* 話した言葉 */
+  #pill { position: absolute; left: 0; top: 0; padding: 18px 44px; border-radius: 999px; background: var(--white); box-shadow: var(--shadow); font-size: 38px; font-weight: 700; white-space: nowrap; }
+  .strike { text-decoration: line-through; text-decoration-color: var(--orange); text-decoration-thickness: 4px; color: #b3bfc2; }
+
+  /* 音声バー（明るい版・暗い版） */
+  #vb { position: absolute; left: 0; top: 0; width: 286px; height: 100px; border-radius: 50px; }
+  #vb .circle { position: absolute; left: 16px; top: 18px; width: 64px; height: 64px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+  #vbDots { position: absolute; left: 118px; top: 0; width: 130px; height: 100px; }
+  #vbDots i { position: absolute; top: 50%; border-radius: 3px; display: block; }
+
+  /* 3b. 表記 */
+  #note { left: 410px; top: 300px; width: 1100px; padding: 48px 60px; }
+  #noteLabel { left: 0; right: 0; top: 190px; text-align: center; font-size: 34px; font-weight: 700; color: var(--gray); letter-spacing: 0.06em; }
+  .row { font-size: 54px; font-weight: 800; white-space: nowrap; }
+  .chg { color: var(--orange); }
+  .uchg { text-decoration: underline; text-decoration-color: var(--orange); text-decoration-thickness: 5px; text-underline-offset: 12px; }
+
+  /* 4. アプリ */
+  #s4Cap { left: 0; right: 0; top: 96px; text-align: center; font-size: 60px; font-weight: 800; }
+  .bubble { display: inline-block; padding: 14px 26px; border-radius: 26px; font-size: 32px; font-weight: 700; }
+  .small-note { display: flex; align-items: center; gap: 10px; font-size: 22px; font-weight: 700; color: var(--gray); }
+
+  /* 5. ターミナル */
+  #term { background: #141718; }
+  #term .chrome { border-bottom: 1px solid #23282a; }
+  #term .lights i { background: #3a4043; }
+  #term .wtitle { color: #8b979a; }
+  #termBody { padding: 30px 40px; font-family: var(--mono); font-size: 30px; line-height: 1.55; color: #eef2f3; }
+  .tl { white-space: pre; }
+  .tgray { color: #7d898c; }
+  .pbox { border: 2px solid #2f3639; border-radius: 12px; padding: 12px 18px; margin-top: 10px; width: 760px; }
+  .opt-on { background: rgba(254, 111, 71, 0.22); border-radius: 6px; margin: 0 -8px; padding: 0 8px; }
+  .enterkey { position: absolute; display: flex; align-items: center; gap: 10px; padding: 0 22px; height: 70px; border-radius: 16px; background: linear-gradient(#ffffff, #eef2f3);
+              font-size: 30px; font-weight: 800; box-shadow: 0 8px 0 #c9d3d5, 0 18px 40px rgba(27, 54, 60, 0.18); }
+
+  /* 6. API キー */
+  #s6 { color: var(--white); }
+  #s6Title { left: 0; right: 0; top: 70px; text-align: center; font-size: 76px; font-weight: 800; letter-spacing: 0.01em; }
+  .gpill { position: absolute; padding: 10px 0; border-radius: 999px; border: 2px solid rgba(255, 255, 255, 0.75); font-size: 26px; font-weight: 700; white-space: nowrap; background: rgba(255, 255, 255, 0.06); }
+  .tile { position: absolute; width: 132px; height: 86px; border-radius: 14px; background: rgba(255, 255, 255, 0.14); border: 1px solid rgba(255, 255, 255, 0.22); display: flex; align-items: center; justify-content: center; gap: 12px; font-size: 32px; font-weight: 800; }
+  #onlyMac { left: 0; right: 0; top: 548px; text-align: center; font-size: 30px; font-weight: 700; }
+  #keys { left: 50%; top: 718px; transform: translateX(-50%); padding: 14px 32px; border-radius: 999px; border: 2px dashed rgba(255, 255, 255, 0.55); font-size: 30px; font-weight: 700; display: flex; gap: 14px; align-items: center; white-space: nowrap; }
+  #cloud { left: 0; right: 0; top: 800px; text-align: center; font-size: 24px; color: rgba(255, 255, 255, 0.72); }
+
+  /* 7. 終わり */
+  #endIcon { left: 360px; top: 330px; width: 330px; height: 330px; border-radius: 76px; box-shadow: 0 30px 80px rgba(27, 54, 60, 0.25); }
+  #endName { left: 790px; top: 318px; font-size: 136px; font-weight: 800; letter-spacing: 0.005em; line-height: 1; }
+  #endFree { left: 795px; top: 490px; font-size: 64px; font-weight: 800; color: var(--teal); display: flex; align-items: center; gap: 20px; white-space: nowrap; }
+  .mit { font-size: 26px; font-weight: 800; padding: 4px 14px; border-radius: 999px; border: 2px solid var(--teal); letter-spacing: 0.04em; }
+  #endReq { left: 798px; top: 586px; font-size: 40px; font-weight: 500; color: #6f8085; }
+  #endUrl { left: 798px; top: 664px; font-family: var(--mono); font-size: 40px; font-weight: 600; display: flex; align-items: center; gap: 16px; }
+  #endUnder { position: absolute; left: 26px; top: 56px; height: 4px; border-radius: 2px; background: var(--teal); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div class="layer" id="bgLight"></div>
+  <div class="layer" id="bgBlue"></div>
+  <div class="layer teal-fill" id="bgTeal"></div>
+
+  <!-- 1. 書き起こしのまま -->
+  <div class="layer" id="s1">
+    <div id="floaters"></div>
+    <div class="abs" id="s1Label"><span class="dot"></span><span id="s1LabelText">書き起こしのまま</span></div>
+    <div class="abs" id="s1Text"></div>
+    <span class="abs" id="s1Measure" style="visibility:hidden;font-size:76px;font-weight:800;white-space:pre;letter-spacing:0.01em"></span>
+    <div class="key" id="fnKey" style="left: 885px; top: 640px">Fn</div>
+  </div>
+
+  <!-- 3. メール -->
+  <div class="win" id="mail" style="left: 400px; top: 170px; width: 900px; height: 520px">
+    <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="wtitle">メール</div></div>
+    <div class="field"><span>宛先</span><span class="ph" style="width:180px"></span></div>
+    <div class="field"><span>件名</span><span class="ph" style="width:260px"></span></div>
+    <div class="body" id="mailBody"></div>
+  </div>
+  <div class="tag" id="tag1" style="left: 1360px; top: 250px"><span class="dot"></span>言いよどみを除く</div>
+  <div class="tag" id="tag2" style="left: 1360px; top: 340px"><span class="dot"></span>言い直しを反映</div>
+  <div class="tag" id="tag3" style="left: 1360px; top: 430px"><span class="dot"></span>表記をそろえる</div>
+
+  <div class="abs" id="noteLabel">表記も、決まった規則でそろえる</div>
+  <div class="win" id="note">
+    <div class="row" id="noteRaw"></div>
+    <div style="height: 2px; background: #edf1f2; margin: 34px 0"></div>
+    <div class="row" id="noteOut"></div>
+  </div>
+
+  <!-- 4. アプリごと -->
+  <div class="abs" id="s4Cap">アプリに合わせて、書き分ける</div>
+  <div class="win" id="wMail" style="left: 170px; top: 290px; width: 520px; height: 430px">
+    <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="wtitle">メール</div></div>
+    <div class="field"><span>宛先</span><span class="ph" style="width:150px"></span></div>
+    <div class="body" style="font-size:32px" id="wMailBody"></div>
+  </div>
+  <div class="win" id="wChat" style="left: 700px; top: 270px; width: 520px; height: 450px">
+    <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="wtitle">チャット</div></div>
+    <div style="padding: 30px 30px; display: flex; flex-direction: column; gap: 22px">
+      <span class="ph" style="width: 230px; height: 54px; border-radius: 27px"></span>
+      <div style="display:flex; justify-content:flex-end" id="wChatMine"><span class="bubble" style="background: var(--teal); color: #fff">明日の4時に伺います</span></div>
+      <div class="small-note" id="wChatNote" style="justify-content:flex-end"><span class="dot"></span>チャットでは句読点なし</div>
+    </div>
+  </div>
+  <div class="win" id="wMemo" style="left: 1230px; top: 290px; width: 520px; height: 430px">
+    <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="wtitle">メモ</div></div>
+    <div class="body" style="font-size:30px; line-height:1.7" id="wMemoBody"></div>
+  </div>
+
+  <!-- 5. Claude Code -->
+  <div class="win" id="term" style="left: 300px; top: 170px; width: 1000px; height: 580px">
+    <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="wtitle">Claude Code</div></div>
+    <div id="termBody"></div>
+  </div>
+  <div class="tag" id="ccTag1" style="left: 1360px; top: 250px"><span class="dot teal"></span>Claude Code</div>
+  <div class="tag" id="ccTag2" style="left: 1360px; top: 340px"><span class="dot teal"></span>Codex</div>
+  <div class="enterkey" id="enterKey" style="left: 1360px; top: 470px">Enter <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#1b363c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 5v7a3 3 0 0 1-3 3H5"/><path d="M9 11l-4 4 4 4"/></svg></div>
+
+  <div id="pill"></div>
+
+  <!-- 6. API キー -->
+  <div class="layer" id="s6">
+    <div class="abs" id="s6Title">APIキーは、いりません。</div>
+    <svg class="abs" id="s6Svg" style="left:0;top:0" width="1920" height="1080" viewBox="0 0 1920 1080" fill="none">
+      <rect id="lapScreen" x="560" y="180" width="800" height="470" rx="28" stroke="rgba(255,255,255,0.85)" stroke-width="3"/>
+      <path id="lapBase" d="M470 676 H1450" stroke="rgba(255,255,255,0.85)" stroke-width="3" stroke-linecap="round"/>
+      <path class="conn" d="M935 262 C 880 292, 790 280, 770 320" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+      <path class="conn" d="M985 262 C 1040 292, 1130 280, 1150 320" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+      <path class="conn2" d="M770 372 C 770 396, 810 394, 810 418" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+      <path class="conn2" d="M1150 372 C 1150 396, 1110 394, 1110 418" stroke="rgba(255,255,255,0.7)" stroke-width="2.5"/>
+    </svg>
+    <div class="abs" id="s6Mic" style="left: 878px; top: 214px; display:flex; align-items:center; gap: 14px">
+      <span style="width:52px;height:52px;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center">
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>
+      <span id="s6Bars" style="display:flex;align-items:center;gap:7px;height:52px"></span>
+    </div>
+    <div class="gpill" id="gp1" style="left: 575px; top: 322px; width: 390px; text-align: center">Appleのオンデバイスモデル</div>
+    <div class="gpill" id="gp2" style="left: 985px; top: 322px; width: 330px; text-align: center">このMacで動く音声認識</div>
+    <div class="tile" id="tile1" style="left: 744px; top: 420px"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>履歴</div>
+    <div class="tile" id="tile2" style="left: 894px; top: 420px"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round"><path d="M4 10v4M8 7v10M12 4v16M16 7v10M20 10v4"/></svg>音声</div>
+    <div class="tile" id="tile3" style="left: 1044px; top: 420px"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/></svg>辞書</div>
+    <div class="abs" id="onlyMac">このMacの中だけ</div>
+    <div class="abs" id="lock" style="left: 936px; top: 652px; width: 48px; height: 48px; border-radius: 50%; background: var(--orange); display:flex; align-items:center; justify-content:center">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="#fff"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V8a4 4 0 0 1 8 0v2" stroke="#fff" stroke-width="2.4" fill="none"/></svg></div>
+    <div class="abs" id="keys"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><circle cx="8" cy="15" r="4"/><path d="M11 12l8-8M16 7l3 3M14 9l2 2"/></svg>ご自身のClaude / OpenAI互換のキーも使えます</div>
+    <div class="abs" id="cloud">クラウドのエンジンを選んだときは、選んだサービスに送ります。</div>
+  </div>
+
+  <!-- 7. 終わり -->
+  <div class="layer" id="s7">
+    <img class="abs" id="endIcon" src="assets/icon.png">
+    <div class="abs" id="endName">Koebumi</div>
+    <div class="abs" id="endFree">無料・オープンソース<span class="mit">MIT</span></div>
+    <div class="abs" id="endReq">macOS 26以降・Appleシリコン</div>
+    <div class="abs" id="endUrl"><span class="dot"></span>github.com/koebumi/koebumi<span id="endUnder"></span></div>
+  </div>
+
+  <!-- 青緑の円（場面の切り替え） -->
+  <div id="wipe"><div class="teal-fill"></div></div>
+
+  <!-- 2. タイトル（青緑の上） -->
+  <div class="layer" id="s2">
+    <svg id="bird" viewBox="0 0 1024 1024">
+      <g transform="translate(-178 -178) scale(40)">
+        <g id="birdBody"><path fill="#FFFFFF" d="m21.5 13.48c-0.8623-1.643-2.024-2.343-3.941-2.805-2.262-0.5478-3.642-0.913-5.443-2.881-0.208 0.4312-0.2688 0.908-0.2688 1.364 0 1.938 1.552 2.729 3.399 3.054-2.425 0.213-4.783-0.3855-6.549-1.623-0.1775 2.511 1.501 3.977 4.768 3.657-1.725 0.7051-2.714 0.7609-4.474 0.487 0.208 1.491 1.684 2.724 3.561 2.196-0.9536 1.086-1.527 2.643-1.527 4.058 0 2.440 2.836 5.245 7.664 5.245 1.162 0.01014 2.272-0.01014 3.145-0.01014 0.0558-0.3957 0.0558-0.6949 0.03043-1.06-0.1775-2.719-1.699-3.307-1.699-5.843 0-1.933 1.349-4.352 2.531-5.458-0.4058-0.1877-0.8065-0.2993-1.197-0.3804z"/></g>
+        <g id="beakTop"><path fill="#FE6F47" d="m22.71 13.86c-1.304 1.238-2.455 3.561-2.541 5.209 2.024-0.6848 4.388-1.436 6.128-1.862-0.4514-1.501-2.146-2.8-3.586-3.348z"/></g>
+        <g id="beakBottom"><path fill="#FE6F47" d="m20.69 19.56c0.142 1.278 0.913 2.48 1.522 3.135 0.8471-0.4312 1.963-1.091 2.749-1.588 0.2739-0.1826 0.487-0.4007 0.6341-0.5833l-4.905-0.9638z"/></g>
+        <g id="eye"><circle cx="17.88" cy="16.44" r="0.75" fill="#28636F"/><circle cx="17.65" cy="16.2" r="0.22" fill="#FFFFFF"/></g>
+      </g>
+    </svg>
+    <div class="abs" id="s2Name">Koebumi</div>
+    <div class="abs" id="s2Copy"><span class="inline-key" id="s2Key">Fn</span><span id="s2Words">を押して、話すだけ。</span></div>
+  </div>
+
+  <div id="vb">
+    <div class="circle" id="vbCircle"><svg id="vbMic" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></div>
+    <div id="vbDots"></div>
+  </div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const expoOut = (p) => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
+const easeOut = (p) => 1 - Math.pow(1 - p, 3);
+const easeInOut = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const easeIn = (p) => p * p * p;
+const lerp = (a, b, p) => a + (b - a) * p;
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+function spring(s, freq = 1.8, damping = 0.6) {
+  if (s <= 0) return 0;
+  const w = 2 * Math.PI * freq, wd = w * Math.sqrt(1 - damping * damping);
+  return 1 - Math.exp(-damping * w * s) * (Math.cos(wd * s) + (damping * w / wd) * Math.sin(wd * s));
+}
+function set(el, a, transform = "", blur = 0) {
+  el.style.opacity = a.toFixed(3);
+  el.style.visibility = a <= 0.002 ? "hidden" : "visible";
+  el.style.transform = transform;
+  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
+}
+// in0〜in1 で現れ、out0〜out1 で消える
+function life(t, in0, in1, out0, out1) {
+  const p = expoOut(prog(t, in0, in1)), q = easeIn(prog(t, out0, out1));
+  return { a: Math.min(p, 1 - q), p, q };
+}
+function rise(el, t, in0, out0, dy = 30, dur = 0.5, outDur = 0.35) {
+  const l = life(t, in0, in0 + dur, out0 - outDur, out0);
+  set(el, l.a, `translateY(${((1 - l.p) * dy - l.q * dy * 0.6).toFixed(1)}px)`, (1 - l.p) * 8 + l.q * 6);
+  return l;
+}
+// 少しずつ打ち込まれる文字。parts は [文字列, 印]（印は CSS のクラス）
+function typed(parts, t, s, e, decorate = (text, cls) => (cls ? `<span class="${cls}">${esc(text)}</span>` : esc(text))) {
+  const total = parts.reduce((n, p) => n + p[0].length, 0);
+  let n = Math.ceil(total * prog(t, s, e));
+  let html = "";
+  for (const [text, cls] of parts) {
+    const k = Math.min(text.length, Math.max(0, n)); n -= text.length;
+    if (k > 0) html += decorate(text.slice(0, k), cls);
+  }
+  return html;
+}
+const hlBg = (t, at, dur = 1.0) => `background: rgba(254,111,71,${(0.28 * (1 - prog(t, at, at + dur))).toFixed(3)})`;
+
+window.DURATION = 30;
+
+// ---- 場面の時刻（秒） ----
+const S = { s1: [0, 3.4], s2: [3.3, 6.1], s3: [6.0, 10.2], s4: [10.1, 12.8], s5: [12.7, 18.9], s6: [18.8, 25.0], s7: [24.9, 30] };
+
+// ---- 背景 ----
+function renderBackground(t) {
+  // 明るい地・青みの地・青緑の地を、場面ごとに切り替える
+  const blue = Math.min(prog(t, 12.6, 12.95), 1 - prog(t, 18.9, 19.0));
+  set($("bgBlue"), blue);
+  // 青緑: タイトル（円が広がってから）と API の場面（円が広がってから）
+  const teal2 = Math.min(prog(t, 3.95, 4.0), 1 - prog(t, 5.85, 6.15));
+  const teal6 = Math.min(prog(t, 19.0, 19.05), 1 - prog(t, 24.9, 24.92));
+  set($("bgTeal"), Math.max(teal2, teal6));
+  // 円: 1→2 は Fn キーから、5→6 は Enter キーから広がる。6→7 はアイコンの位置へ縮む
+  const wipe = $("wipe");
+  let cx = 0, cy = 0, r = 0;
+  if (t >= 3.35 && t < 4.0) { cx = 960; cy = 700; r = 2300 * easeInOut(prog(t, 3.4, 3.98)); }
+  else if (t >= 18.35 && t < 19.05) { cx = 1450; cy = 555; r = 2400 * easeInOut(prog(t, 18.4, 19.02)); }
+  else if (t >= 24.9 && t < 25.6) { cx = 525; cy = 495; r = lerp(2400, 0, easeInOut(prog(t, 24.9, 25.5))); }
+  wipe.style.visibility = r > 0.5 ? "visible" : "hidden";
+  wipe.style.left = `${cx - r}px`; wipe.style.top = `${cy - r}px`;
+  wipe.style.width = `${2 * r}px`; wipe.style.height = `${2 * r}px`;
+  wipe.firstElementChild.style.left = `${r - cx}px`; wipe.firstElementChild.style.top = `${r - cy}px`;
+}
+
+// ---- 1. 書き起こしのまま ----
+const FLOATERS = [["あの、", 44, 270, 210], ["えっと", 52, 1390, 200], ["なんか", 30, 960, 170], ["えっと", 30, 200, 610], ["なんか", 44, 560, 720], ["その一", 38, 1310, 680], ["あの、", 30, 1640, 600], ["えーと", 34, 1610, 300]];
+(() => { const f = $("floaters"); FLOATERS.forEach(([w, size]) => { const s = document.createElement("span"); s.className = "floater"; s.textContent = w; s.style.fontSize = size + "px"; f.appendChild(s); }); })();
+// 話したこと: [文字列, 種類]。drop は消える部分、keep は残る部分、change は表記を変える部分（to が変えた後）
+const S1_SEGS = [
+  { text: "えーと、", kind: "drop" }, { text: "明日の", kind: "keep" }, { text: "三時に、いや", kind: "drop" },
+  { text: "四時", kind: "change", to: "4時" }, { text: "に伺います", kind: "keep" }, { text: "", kind: "add", to: "。" },
+];
+const S1_TYPE = [0.3, 1.55], S1_STRIKE = 1.75, S1_FALL = 1.95, S1_GATHER = [2.2, 2.75], S1_LABEL = 2.35;
+(() => {
+  const box = $("s1Text");
+  S1_SEGS.forEach((seg) => {
+    const a = document.createElement("span"); a.className = "seg"; box.appendChild(a); seg.rawEl = a;
+    if (seg.to) { const b = document.createElement("span"); b.className = "seg"; b.textContent = seg.to; box.appendChild(b); seg.toEl = b; }
+  });
+})();
+function s1Width(text) { const m = $("s1Measure"); m.textContent = text; return m.getBoundingClientRect().width; }
+function renderS1(t) {
+  const out = easeIn(prog(t, 3.5, 3.9));
+  set($("s1"), 1 - out);
+  rise($("s1Label"), t, 0.15, 99, 16);
+  // ラベル: 書き起こしのまま → Koebumiが入力
+  const lb = prog(t, S1_LABEL, S1_LABEL + 0.25);
+  $("s1LabelText").textContent = lb < 0.5 ? "書き起こしのまま" : "Koebumiが入力";
+  $("s1LabelText").style.opacity = Math.abs(1 - 2 * lb).toFixed(3);
+  $("s1Label").querySelector(".dot").style.background = lb < 0.5 ? "var(--orange)" : "var(--teal)";
+
+  // 位置: 話した並びと、整えた並び（どちらも左ぞろえ）
+  let x = 0;
+  const rawX = S1_SEGS.map((seg) => { const v = x; x += s1Width(seg.text); return v; });
+  x = 0;
+  const finX = S1_SEGS.map((seg) => { const v = x; if (seg.kind === "keep") x += s1Width(seg.text); else if (seg.to) x += s1Width(seg.to); return v; });
+  const total = S1_SEGS.reduce((n, seg) => n + seg.text.length, 0);
+  let typedN = Math.ceil(total * prog(t, S1_TYPE[0], S1_TYPE[1]));
+  const gather = easeInOut(prog(t, S1_GATHER[0], S1_GATHER[1]));
+  let caretX = 0;
+  S1_SEGS.forEach((seg, i) => {
+    const k = Math.min(seg.text.length, Math.max(0, typedN)); typedN -= seg.text.length;
+    seg.rawEl.textContent = seg.text.slice(0, k);
+    if (k > 0) caretX = rawX[i] + s1Width(seg.text.slice(0, k));
+    if (seg.kind === "keep") {
+      set(seg.rawEl, k > 0 ? 1 : 0, `translateX(${lerp(rawX[i], finX[i], gather).toFixed(1)}px)`);
+    } else if (seg.kind === "drop") {
+      // 波線 → 取り消し線 → 下へ落ちて消える
+      const fall = easeIn(prog(t, S1_FALL + i * 0.04, S1_FALL + 0.4 + i * 0.04));
+      seg.rawEl.className = "seg " + (t >= S1_STRIKE ? "strike" : "wavy");
+      set(seg.rawEl, k > 0 ? 1 - fall : 0, `translate(${rawX[i].toFixed(1)}px, ${(fall * 90).toFixed(1)}px) rotate(${(fall * (i % 2 ? 5 : -5)).toFixed(2)}deg)`, fall * 6);
+    } else if (seg.kind === "change") {
+      // 「四時」は「4時」に置き換わる
+      const sw = prog(t, S1_GATHER[0] + 0.15, S1_GATHER[0] + 0.45);
+      const pos = lerp(rawX[i], finX[i], gather);
+      set(seg.rawEl, k > 0 ? 1 - sw : 0, `translateX(${pos.toFixed(1)}px) translateY(${(-sw * 30).toFixed(1)}px)`, sw * 8);
+      set(seg.toEl, sw, `translateX(${pos.toFixed(1)}px) translateY(${((1 - sw) * 30).toFixed(1)}px)`, (1 - sw) * 8);
+      seg.toEl.style.color = `rgb(${Math.round(lerp(254, 27, prog(t, S1_GATHER[1], S1_GATHER[1] + 0.5)))},${Math.round(lerp(111, 54, prog(t, S1_GATHER[1], S1_GATHER[1] + 0.5)))},${Math.round(lerp(71, 60, prog(t, S1_GATHER[1], S1_GATHER[1] + 0.5)))})`;
+    } else {
+      // 句点を足す
+      const ap = expoOut(prog(t, S1_GATHER[1] - 0.1, S1_GATHER[1] + 0.25));
+      set(seg.toEl, ap, `translateX(${finX[i].toFixed(1)}px) scale(${lerp(1.4, 1, ap).toFixed(3)})`);
+    }
+  });
+  // カーソル: 打っている間は文の後ろ、整えたあとは句点の後ろ
+  const finEnd = finX[finX.length - 1] + s1Width("。");
+  const cx = t < S1_GATHER[0] ? caretX : lerp(caretX, finEnd, gather);
+  let caret = $("s1Caret");
+  if (!caret) { caret = document.createElement("span"); caret.id = "s1Caret"; caret.className = "caret seg"; caret.style.height = "70px"; caret.style.top = "16px"; $("s1Text").appendChild(caret); }
+  set(caret, Math.floor(t * 2.4) % 2 === 0 || t < S1_TYPE[1] + 0.1 ? 1 : 0, `translateX(${(cx + 4).toFixed(1)}px)`);
+
+  const fl = $("floaters").children;
+  FLOATERS.forEach(([, , x0, y0], i) => {
+    const appear = 0.35 + i * 0.16;
+    const a = expoOut(prog(t, appear, appear + 0.6)) * (1 - 0.6 * prog(t, S1_FALL, S1_GATHER[1]));
+    const dx = Math.sin(t * 0.7 + i * 1.9) * 18, dy = Math.cos(t * 0.6 + i * 1.3) * 12 - t * 6;
+    set(fl[i], a * (0.55 + 0.35 * ((i * 37) % 10) / 10), `translate(${(x0 + dx).toFixed(1)}px, ${(y0 + dy).toFixed(1)}px)`, (1 - a) * 8);
+  });
+  // Fn キー: 整った文を見せたあとに出てきて、押される
+  const kk = spring(t - 2.85, 1.6, 0.55);
+  const press = Math.min(easeOut(prog(t, 3.2, 3.32)), 1);
+  set($("fnKey"), clamp(kk * 1.4), `translateY(${((1 - kk) * 60 + press * 10).toFixed(1)}px) scale(${lerp(0.7, 1, clamp(kk)).toFixed(3)})`);
+  $("fnKey").style.boxShadow = `0 ${(12 - press * 10).toFixed(1)}px 0 #d4dcde, 0 24px 50px rgba(27,54,60,0.18), 0 0 0 ${(press * 14).toFixed(1)}px rgba(254,111,71,${(0.22 * press).toFixed(3)})`;
+}
+
+// ---- 2. タイトル ----
+function renderS2(t) {
+  const out = easeIn(prog(t, 5.85, 6.15));
+  set($("s2"), t > 3.8 ? 1 - out : 0);
+  // オウム: 体が下から現れ、くちばしが開き、目が入る
+  const body = expoOut(prog(t, 3.95, 4.45));
+  $("birdBody").style.clipPath = `inset(${((1 - body) * 100).toFixed(1)}% 0 0 0)`;
+  $("birdBody").style.opacity = clamp(body * 2).toFixed(3);
+  const beak = spring(t - 4.3, 2.2, 0.5);
+  $("beakTop").style.transform = `rotate(${((1 - beak) * -18).toFixed(2)}deg)`; $("beakTop").style.transformOrigin = "20.5px 18px";
+  $("beakBottom").style.transform = `rotate(${((1 - beak) * 22).toFixed(2)}deg)`; $("beakBottom").style.transformOrigin = "20.7px 19.6px";
+  $("beakTop").style.opacity = $("beakBottom").style.opacity = clamp(beak * 3).toFixed(3);
+  $("eye").style.opacity = prog(t, 4.45, 4.55).toFixed(3);
+  const bs = spring(t - 3.9, 1.4, 0.7);
+  $("bird").style.transform = `translateY(${((1 - bs) * 40).toFixed(1)}px) scale(${lerp(0.8, 1, clamp(bs)).toFixed(3)})`;
+  rise($("s2Name"), t, 4.45, 99, 24);
+  const ck = spring(t - 4.7, 1.6, 0.6);
+  set($("s2Key"), clamp(ck * 1.5), `translateY(${((1 - ck) * 40).toFixed(1)}px) scale(${lerp(0.6, 1, clamp(ck)).toFixed(3)})`);
+  rise($("s2Words"), t, 4.8, 99, 30, 0.5);
+}
+
+// ---- 3. メール ----
+function renderS3(t) {
+  const mail = $("mail");
+  const l = life(t, 6.0, 6.5, 8.75, 9.1);
+  set(mail, l.a, `translateY(${((1 - l.p) * 50).toFixed(1)}px) translateX(${(-l.q * 80).toFixed(1)}px) scale(${lerp(0.97, 1, l.p).toFixed(3)})`);
+  const pasteAt = 8.0;
+  $("mailBody").innerHTML = t < pasteAt ? `<span class="caret" style="background:var(--ink);height:40px"></span>`
+    : `<span class="hl" style="${hlBg(t, pasteAt)}">明日の4時に伺います。</span>`;
+  [["tag1", 7.7], ["tag2", 7.9], ["tag3", 8.1]].forEach(([id, s]) => {
+    const k = spring(t - s, 2, 0.65);
+    const q = easeIn(prog(t, 8.75, 9.05));
+    set($(id), clamp(k * 1.6) * (1 - q), `translateX(${((1 - clamp(k)) * 40 - q * 40).toFixed(1)}px) scale(${lerp(0.85, 1, clamp(k)).toFixed(3)})`);
+  });
+  // 表記
+  const nl = life(t, 8.95, 9.4, 9.95, 10.2);
+  set($("note"), nl.a, `translateY(${((1 - nl.p) * 40 - nl.q * 20).toFixed(1)}px) scale(${lerp(0.96, 1, nl.p).toFixed(3)})`);
+  set($("noteLabel"), nl.a, `translateY(${((1 - nl.p) * 20).toFixed(1)}px)`);
+  const marked = t >= 9.3;
+  $("noteRaw").innerHTML = `<span style="color:#9aa8ab">資料は</span><span class="${marked ? "strike" : ""}" style="color:#9aa8ab">三時</span><span style="color:#9aa8ab">までに送って</span><span class="${marked ? "strike" : ""}" style="color:#9aa8ab">下さい</span>`;
+  const op = expoOut(prog(t, 9.45, 9.8));
+  $("noteOut").innerHTML = `資料は<span class="chg uchg">3時</span>までに送って<span class="chg uchg">ください</span>。`;
+  set($("noteOut"), op, `translateY(${((1 - op) * 20).toFixed(1)}px)`, (1 - op) * 8);
+}
+
+// ---- 4. アプリごと ----
+function renderS4(t) {
+  rise($("s4Cap"), t, 10.15, 12.8, 24);
+  [["wMail", 10.2], ["wChat", 10.35], ["wMemo", 10.5]].forEach(([id, s], i) => {
+    const k = spring(t - s, 1.5, 0.75);
+    const q = easeIn(prog(t, 12.45, 12.8));
+    set($(id), clamp(k * 1.5) * (1 - q), `translateY(${((1 - clamp(k)) * 80 - q * 40).toFixed(1)}px) rotate(${((1 - clamp(k)) * (i - 1) * 4).toFixed(2)}deg)`);
+  });
+  $("wMailBody").innerHTML = t < 10.85 ? "" : `<span class="hl" style="${hlBg(t, 10.85)}">明日の4時に伺います。</span>`;
+  const cm = expoOut(prog(t, 11.05, 11.4));
+  set($("wChatMine"), cm, `translateY(${((1 - cm) * 16).toFixed(1)}px)`);
+  set($("wChatNote"), expoOut(prog(t, 11.5, 11.9)));
+  const memo = ["明日やることは3つあります。", "1. 資料", "2. 見積もり", "3. 日程の確認"];
+  $("wMemoBody").innerHTML = memo.map((line, i) => {
+    const a = expoOut(prog(t, 11.25 + i * 0.12, 11.55 + i * 0.12));
+    return `<div style="opacity:${a.toFixed(3)};transform:translateX(${((1 - a) * 16).toFixed(1)}px)">${esc(line)}</div>`;
+  }).join("");
+}
+
+// ---- 5. Claude Code ----
+function renderS5(t) {
+  const l = life(t, 12.8, 13.3, 99, 99);
+  set($("term"), t < 19.05 ? l.a : 0, `translateY(${((1 - l.p) * 50).toFixed(1)}px) scale(${lerp(0.97, 1, l.p).toFixed(3)})`);
+  [["ccTag1", 13.05], ["ccTag2", 13.25]].forEach(([id, s]) => {
+    const k = spring(t - s, 2, 0.65);
+    set($(id), t < 19.05 ? clamp(k * 1.6) : 0, `translateX(${((1 - clamp(k)) * 40).toFixed(1)}px) scale(${lerp(0.85, 1, clamp(k)).toFixed(3)})`);
+  });
+  const star = `<svg width="26" height="26" viewBox="0 0 24 24" style="vertical-align:-3px;margin-right:12px"><g stroke="#fe6f47" stroke-width="2.6" stroke-linecap="round"><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4"/></g></svg>`;
+  let html = `<div class="tl">${star}<b>Claude Code</b></div><div class="tl tgray">~/project</div><div style="height:22px"></div>`;
+  if (t >= 14.45) html += `<div class="tl tgray">&gt; /compact</div>`;
+  if (t >= 18.05) html += `<div class="tl tgray">&gt; テストを実行して</div>`;
+  const promptOn = t >= 14.6 && t < 16.05;
+  if (promptOn) {
+    const sel = t >= 15.55;
+    const o = (text, on) => `<div class="tl"><span class="${on ? "opt-on" : ""}">${on ? "❯ " : "  "}${esc(text)}</span></div>`;
+    const pa = expoOut(prog(t, 14.6, 14.9));
+    html += `<div class="pbox" style="opacity:${pa.toFixed(3)}"><div class="tl">Bash command  <span class="tgray">npm test</span></div><div class="tl">Do you want to proceed?</div>`
+      + o("1. Yes", sel) + `<div class="tl tgray">  2. Yes, and don't ask again</div><div class="tl tgray">  3. No</div></div>`;
+  } else {
+    let line = "";
+    if (t >= 14.05 && t < 14.45) line = `<span class="hl" style="${hlBg(t, 14.05, 0.4)}">/compact</span>`;
+    else if (t >= 17.65 && t < 18.05) line = `<span class="hl" style="${hlBg(t, 17.65, 0.4)}">テストを実行して</span>`;
+    html += `<div class="tl">&gt; ${line}<span class="caret" style="background:#eef2f3;height:30px"></span></div>`;
+  }
+  $("termBody").innerHTML = html;
+  // Enter キー: 許可の確認に答えたときと、「送信」のとき
+  let e = 0, press = 0;
+  for (const at of [15.7, 17.85]) {
+    const k = spring(t - (at - 0.25), 2.2, 0.6);
+    const out = easeIn(prog(t, at + 0.5, at + 0.75));
+    if (t >= at - 0.3 && t < at + 0.8) { e = clamp(k * 1.5) * (1 - out); press = Math.min(prog(t, at, at + 0.06), 1 - prog(t, at + 0.12, at + 0.2)); }
+  }
+  $("enterKey").style.top = t < 16.5 ? "470px" : "520px";
+  set($("enterKey"), t < 18.4 ? e : 0, `translateY(${(press * 8).toFixed(1)}px)`);
+  $("enterKey").style.boxShadow = `0 ${(8 - press * 7).toFixed(1)}px 0 #c9d3d5, 0 18px 40px rgba(27,54,60,0.18)`;
+}
+
+// ---- 話した言葉と音声バー ----
+const SPOKEN = [
+  { s: 6.25, e: 7.35, strike: 7.55, hide: 8.7, x: 850, y: 728, parts: [["えーと、", 1], ["明日の", 0], ["三時に、いや", 1], ["四時に伺います", 0]] },
+  { s: 13.2, e: 13.85, strike: 99, hide: 14.35, x: 800, y: 790, parts: [["スラッシュ コンパクト", 0]] },
+  { s: 14.95, e: 15.2, strike: 99, hide: 15.75, x: 800, y: 790, parts: [["はい", 0]] },
+  { s: 16.5, e: 17.3, strike: 17.45, hide: 18.0, x: 800, y: 790, parts: [["テストを実行して、", 0], ["送信", 1]] },
+];
+const TAKES = [
+  { rec: 5.15, proc: 99, done: 5.95, dark: true, x: 960, y: 900 },
+  { rec: 6.15, proc: 7.4, done: 7.85, x: 850, y: 868 },
+  { rec: 13.1, proc: 13.9, done: 14.15, x: 800, y: 930 },
+  { rec: 14.85, proc: 15.3, done: 15.6, x: 800, y: 930 },
+  { rec: 16.4, proc: 17.35, done: 17.7, x: 800, y: 930 },
+];
+function renderPill(t) {
+  const sp = SPOKEN.find((x) => t >= x.s - 0.25 && t <= x.hide + 0.3);
+  const pill = $("pill");
+  if (!sp) { set(pill, 0); return; }
+  // 1 文字目が出てから枠を出す（空の枠が丸く見えないように）
+  const l = life(t, sp.s, sp.s + 0.3, sp.hide, sp.hide + 0.3);
+  const html = typed(sp.parts.map(([text, drop]) => [text, drop && t >= sp.strike ? "strike" : ""]), t, sp.s, sp.e);
+  if (!html) { set(pill, 0); return; }
+  pill.innerHTML = html;
+  pill.style.left = `${(sp.x - pill.offsetWidth / 2).toFixed(1)}px`;
+  pill.style.top = `${sp.y}px`;
+  set(pill, l.a, `translateY(${((1 - l.p) * 16).toFixed(1)}px) scale(${lerp(0.94, 1, l.p).toFixed(3)})`);
+}
+(() => { for (let i = 0; i < 9; i++) $("vbDots").appendChild(document.createElement("i")); })();
+function renderVoiceBar(t) {
+  const tk = TAKES.find((x) => t >= x.rec - 0.15 && t <= x.done + 0.35);
+  const vb = $("vb");
+  if (!tk) { set(vb, 0); return; }
+  const k = spring(t - tk.rec + 0.1, 2.2, 0.7);
+  const out = easeIn(prog(t, tk.done, tk.done + 0.3));
+  vb.style.left = `${tk.x - 143}px`; vb.style.top = `${tk.y}px`;
+  set(vb, clamp(k * 1.5) * (1 - out), `translateY(${((1 - clamp(k)) * 30 + out * 20).toFixed(1)}px) scale(${lerp(0.88, 1, clamp(k)).toFixed(3)})`);
+  // 明るい版: 白いすりガラス、黒い丸に白いマイク、黒い線。暗い版: 黒いすりガラス、白い丸に黒いマイク、白い線
+  const dark = !!tk.dark;
+  const ink = dark ? "rgba(255,255,255,0.95)" : "#0b0d12";
+  vb.style.background = dark ? "rgba(22,23,26,0.72)" : "rgba(255,255,255,0.82)";
+  vb.style.backdropFilter = "blur(24px) saturate(1.4)";
+  vb.style.boxShadow = dark ? "0 18px 50px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.18)" : "0 18px 50px rgba(27,54,60,0.16), inset 0 1px 0 rgba(255,255,255,0.9), inset 0 -1px 0 rgba(0,0,0,0.06)";
+  $("vbCircle").style.background = dark ? "#f4f4f6" : "#16171a";
+  $("vbMic").style.stroke = dark ? "#16171a" : "#ffffff";
+  const recording = t < tk.proc;
+  const dots = $("vbDots").children;
+  for (let i = 0; i < 9; i++) {
+    const d = dots[i];
+    d.style.background = ink;
+    if (recording) {
+      // 声に合わせて伸びる線（間隔 14px、太さ 4px、最大 62px）
+      const c = i - 4, env = Math.exp(-(c * c) / 12);
+      const v = 0.5 + 0.5 * Math.sin(t * 12.7 + i * 1.6) * Math.sin(t * 4.9 + i * 0.8 + 1.1);
+      const talk = 0.45 + 0.55 * Math.sin(t * 3.3 + 0.4) ** 2;
+      const h = 4 + 58 * env * v * talk;
+      d.style.width = "4px"; d.style.height = `${h.toFixed(1)}px`;
+      d.style.left = `${8 + i * 14}px`; d.style.marginTop = `${(-h / 2).toFixed(1)}px`; d.style.opacity = 1;
+    } else {
+      // 処理中: 真ん中の 3 つの点が波打つ
+      const j = i - 3;
+      const on = j >= 0 && j < 3;
+      const lift = on ? Math.sin(t * (2 * Math.PI / 1.2) - j * 0.9) * 5 : 0;
+      d.style.width = "6px"; d.style.height = "6px";
+      d.style.left = `${8 + 4 * 14 + (j - 1) * 11 - 1}px`; d.style.marginTop = `${(-3 + lift).toFixed(1)}px`; d.style.opacity = on ? 1 : 0;
+    }
+  }
+}
+
+// ---- 6. API キー ----
+(() => { const b = $("s6Bars"); for (let i = 0; i < 13; i++) { const e = document.createElement("i"); e.style.cssText = "display:block;width:4px;border-radius:2px;background:#fff"; b.appendChild(e); } })();
+function drawStroke(el, p) {
+  const len = el.getTotalLength();
+  el.style.strokeDasharray = `${len}`;
+  el.style.strokeDashoffset = `${(len * (1 - p)).toFixed(1)}`;
+}
+function renderS6(t) {
+  const on = t >= 19.0 && t < 24.95;
+  const out = easeIn(prog(t, 24.6, 24.9));
+  set($("s6"), on ? 1 - out : 0);
+  if (!on) return;
+  rise($("s6Title"), t, 19.1, 99, 30, 0.6);
+  drawStroke($("lapScreen"), easeInOut(prog(t, 19.3, 20.0)));
+  drawStroke($("lapBase"), easeInOut(prog(t, 19.5, 20.0)));
+  const m = expoOut(prog(t, 20.0, 20.4));
+  set($("s6Mic"), m, `scale(${lerp(0.8, 1, m).toFixed(3)})`);
+  [...$("s6Bars").children].forEach((e, i) => {
+    const c = i - 6, env = Math.exp(-(c * c) / 18);
+    const v = 0.5 + 0.5 * Math.sin(t * 12 + i * 1.5) * Math.sin(t * 5 + i);
+    e.style.height = `${(6 + 40 * env * v).toFixed(1)}px`;
+  });
+  document.querySelectorAll(".conn").forEach((e) => drawStroke(e, easeInOut(prog(t, 20.35, 20.75))));
+  [["gp1", 20.6], ["gp2", 20.75]].forEach(([id, s]) => { const k = spring(t - s, 2, 0.7); set($(id), clamp(k * 1.5), `scale(${lerp(0.85, 1, clamp(k)).toFixed(3)})`); });
+  document.querySelectorAll(".conn2").forEach((e) => drawStroke(e, easeInOut(prog(t, 21.05, 21.4))));
+  [["tile1", 21.3], ["tile2", 21.42], ["tile3", 21.54]].forEach(([id, s]) => { const k = spring(t - s, 2, 0.7); set($(id), clamp(k * 1.5), `translateY(${((1 - clamp(k)) * 20).toFixed(1)}px)`); });
+  rise($("onlyMac"), t, 21.9, 99, 14);
+  const lk = spring(t - 22.0, 2.2, 0.55);
+  set($("lock"), clamp(lk * 1.5), `scale(${lerp(0.3, 1, clamp(lk)).toFixed(3)})`);
+  const kk = expoOut(prog(t, 22.6, 23.1));
+  set($("keys"), kk, `translateX(-50%) translateY(${((1 - kk) * 20).toFixed(1)}px)`);
+  rise($("cloud"), t, 23.2, 99, 12);
+}
+
+// ---- 7. 終わり ----
+function renderS7(t) {
+  const on = t >= 25.2;
+  $("s7").style.visibility = on ? "visible" : "hidden";
+  if (!on) return;
+  const ik = spring(t - 25.25, 1.5, 0.7);
+  set($("endIcon"), clamp(ik * 2), `scale(${lerp(0.82, 1, clamp(ik)).toFixed(3)})`);
+  [["endName", 25.5], ["endFree", 25.8], ["endReq", 26.05], ["endUrl", 26.3]].forEach(([id, s]) => {
+    const p = expoOut(prog(t, s, s + 0.6));
+    set($(id), p, `translateX(${((1 - p) * 40).toFixed(1)}px)`, (1 - p) * 8);
+  });
+  const u = easeInOut(prog(t, 26.8, 27.5));
+  $("endUnder").style.width = `${(u * 560).toFixed(1)}px`;
+}
+
+window.renderAt = function (t) {
+  renderBackground(t);
+  renderS1(t);
+  renderS2(t);
+  renderS3(t);
+  renderS4(t);
+  renderS5(t);
+  renderS6(t);
+  renderS7(t);
+  renderPill(t);
+  renderVoiceBar(t);
+};
+const params = new URLSearchParams(location.search);
+renderAt(params.get("t") ? parseFloat(params.get("t")) : 0);
+</script>
+<script src="player.js"></script>
+</body>
+</html>

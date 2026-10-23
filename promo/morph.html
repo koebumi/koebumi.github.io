@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Koebumi PR morph</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;800&display=swap">
+<!--
+  案 B「言葉が整う瞬間」（15 秒、黒地）。話した言葉が 1 文字ずつ出て、言いよどみが落ち、残った言葉が寄り集まって整った文になる。
+  renderAt(t) は時刻 t だけで画面を決める。場面は拍（BEAT 秒）に合わせる。
+  文章は、Koebumi（Apple オンデバイス）で実際に整形した結果（句読点は初期設定の「、。」）。
+-->
+<style>
+  :root {
+    --white: #f5f5f7;
+    --gray: #6e6e73;
+    --orange: #fe6f47;
+    --sans: "SF Pro Display", -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --mono: "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  body { font-family: var(--sans); color: var(--white); -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; transform-origin: 0 0; }
+  #glow { position: absolute; inset: 0; }
+  .seg { position: absolute; top: 0; white-space: pre; font-size: 58px; font-weight: 700; line-height: 1; will-change: transform; }
+  .mono { font-family: var(--mono); font-weight: 600; }
+  #line { position: absolute; left: 0; top: 500px; width: 1920px; height: 80px; }
+  #under { position: absolute; top: 600px; height: 4px; background: var(--orange); border-radius: 2px; }
+  .label { position: absolute; left: 0; right: 0; text-align: center; font-size: 38px; font-weight: 600; letter-spacing: 0.06em; color: #a1a1a6; }
+  #measure { position: absolute; visibility: hidden; white-space: pre; font-size: 58px; font-weight: 700; }
+  .key { display: inline-block; font-family: var(--sans); font-size: 40px; font-weight: 700; padding: 8px 20px 10px; border-radius: 14px; border: 2px solid var(--orange); color: var(--orange); vertical-align: 10px; }
+  #tagline { position: absolute; left: 0; right: 0; top: 470px; text-align: center; font-size: 104px; font-weight: 800; letter-spacing: -0.01em; }
+  #logo { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #logo img { width: 210px; height: 210px; border-radius: 48px; }
+  #logo .name { margin-top: 40px; font-size: 128px; font-weight: 800; letter-spacing: -0.01em; line-height: 1; }
+  #logo .url { margin-top: 44px; font-size: 32px; font-weight: 600; color: #a1a1a6; }
+  #mic { position: absolute; left: 50%; top: 780px; margin-left: -6px; display: flex; gap: 8px; height: 60px; align-items: center; }
+  #mic i { display: block; width: 6px; border-radius: 3px; background: var(--white); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+  <div class="label" id="label" style="top: 380px"></div>
+  <div id="line"></div>
+  <div id="under"></div>
+  <div id="mic"></div>
+  <div id="tagline">話すだけで、整った日本語に。</div>
+  <div id="logo">
+    <img src="assets/icon.png">
+    <div class="name">Koebumi</div>
+    <div class="url">github.com/koebumi/koebumi</div>
+  </div>
+  <span id="measure"></span>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const expoOut = (p) => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
+const easeInOut = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+const easeIn = (p) => p * p * p;
+const lerp = (a, b, p) => a + (b - a) * p;
+
+let BEAT = 0.5, OFFSET = 0;
+const b = (n) => OFFSET + n * BEAT;
+window.DURATION = 15;
+
+// 例ごとの区切り。raw は話した言葉、fin は入力された言葉（"" は消える部分）。mono は等幅で書く部分
+const EXAMPLES = [
+  { s: 0.5, label: "チャットに話す", segs: [
+    { raw: "えーと、", fin: "" }, { raw: "明日の会議は", fin: "明日の会議は" }, { raw: "3時に、いや", fin: "" }, { raw: "4時にしてください", fin: "4時にしてください" }] },
+  { s: 8.5, label: "メールに話す", segs: [
+    { raw: "あ、", fin: "" }, { raw: "来週の打ち合わせ", fin: "来週の打ち合わせ" }, { raw: "なんですけど、", fin: "ですが、" }, { raw: "ちょっと", fin: "少し" },
+    { raw: "遅れて参加", fin: "遅れて参加" }, { raw: "します", fin: "いたします。" }] },
+  { s: 16.5, label: "Claude Codeに話す", segs: [
+    { raw: "えーと、", fin: "" }, { raw: "エージェントインプット", fin: "AgentInput", mono: true }, { raw: "のテストを直して。", fin: "のテストを直して。" }, { raw: "送信", fin: "↵", key: true }] },
+];
+// 1 つの例の中の拍: 0〜3 で話す、3.5 で落ちる、4〜5 で寄る、5.5 で下線、7.5 で消える
+const SPEAK = 3, DROP = 3.5, GATHER = 4.2, UNDER = 5.4, LEAVE = 7.2, END = 7.8;
+
+const measureEl = $("measure");
+function width(text, mono) {
+  measureEl.className = mono ? "mono" : "";
+  measureEl.textContent = text;
+  return measureEl.getBoundingClientRect().width;
+}
+// 例ごとに、話した並びと入力された並びの x 座標を求める（中央ぞろえ）
+function layout(ex) {
+  const rawW = ex.segs.map((s) => width(s.raw, false));
+  const finW = ex.segs.map((s) => (s.fin && !s.key ? width(s.fin, s.mono) : s.key ? 150 : 0));
+  const gapKey = ex.segs.some((s) => s.key) ? 24 : 0;
+  const rawTotal = rawW.reduce((a, x) => a + x, 0);
+  const finTotal = finW.reduce((a, x) => a + x, 0) + gapKey;
+  let x = (1920 - rawTotal) / 2;
+  const rawX = rawW.map((w) => { const v = x; x += w; return v; });
+  x = (1920 - finTotal) / 2;
+  const finX = ex.segs.map((s, i) => { if (s.key) x += gapKey; const v = x; x += finW[i]; return v; });
+  return { rawW, finW, rawX, finX, finStart: (1920 - finTotal) / 2, finTotal };
+}
+
+// 部品は例ごとに作っておき、毎回位置と見え方だけを変える
+const parts = EXAMPLES.map((ex) => ex.segs.map((seg) => {
+  const raw = document.createElement("div"); raw.className = "seg"; $("line").appendChild(raw);
+  const fin = document.createElement("div"); fin.className = "seg" + (seg.mono ? " mono" : ""); $("line").appendChild(fin);
+  if (seg.key) fin.innerHTML = `<span class="key">↵ Enter</span>`; else fin.textContent = seg.fin;
+  return { raw, fin };
+}));
+(() => { for (let i = 0; i < 7; i++) $("mic").appendChild(document.createElement("i")); })();
+
+function set(el, opacity, transform = "", blur = 0, color = null) {
+  el.style.opacity = opacity.toFixed(3);
+  el.style.visibility = opacity <= 0.002 ? "hidden" : "visible";
+  el.style.transform = transform;
+  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
+  if (color) el.style.color = color;
+}
+const mix = (a, b2, p) => `rgb(${a.map((v, i) => Math.round(lerp(v, b2[i], p))).join(",")})`;
+const GRAY = [110, 110, 115], WHITE = [245, 245, 247], ORANGE = [254, 111, 71];
+
+function renderExample(ex, idx, t) {
+  const L = layout(ex);
+  const at = (n) => b(ex.s + n);
+  const total = ex.segs.reduce((n, s) => n + s.raw.length, 0);
+  let typed = Math.ceil(total * prog(t, at(0), at(SPEAK)));
+  const leave = easeIn(prog(t, at(LEAVE), at(END)));
+  const gather = easeInOut(prog(t, at(GATHER), at(GATHER + 1.1)));
+  ex.segs.forEach((seg, i) => {
+    const { raw, fin } = parts[idx][i];
+    const shown = Math.min(seg.raw.length, Math.max(0, typed));
+    typed -= seg.raw.length;
+    raw.textContent = seg.raw.slice(0, shown);
+    const same = seg.raw === seg.fin;
+    const stagger = i * 0.08;
+    if (same) {
+      // そのまま残る言葉: 灰色で出て、寄り集まり、白くなる
+      const x = lerp(L.rawX[i], L.finX[i], gather);
+      set(raw, shown > 0 ? 1 - leave : 0, `translate(${x.toFixed(1)}px, ${(-leave * 40).toFixed(1)}px)`, leave * 12, mix(GRAY, WHITE, gather));
+      set(fin, 0);
+    } else {
+      // 落ちる言葉（言いよどみ・言い直し・言い換える前）
+      const d = easeIn(prog(t, at(DROP) + stagger * BEAT, at(DROP + 0.9) + stagger * BEAT));
+      const hl = prog(t, at(DROP - 0.5), at(DROP));
+      set(raw, shown > 0 ? 1 - d : 0, `translate(${L.rawX[i].toFixed(1)}px, ${(d * 140).toFixed(1)}px) rotate(${(d * (i % 2 ? 6 : -6)).toFixed(2)}deg)`, d * 10,
+        mix(GRAY, ORANGE, hl));
+      // 代わりに入る言葉: 決まった位置にオレンジで現れ、白くなる
+      if (seg.fin) {
+        const p = expoOut(prog(t, at(GATHER + 0.5), at(GATHER + 1.3)));
+        const w = expoOut(prog(t, at(UNDER), at(UNDER + 1)));
+        set(fin, p * (1 - leave), `translate(${L.finX[i].toFixed(1)}px, ${((1 - p) * -30 - leave * 40).toFixed(1)}px)`, (1 - p) * 14 + leave * 12,
+          seg.key ? null : mix(ORANGE, WHITE, w));
+      } else set(fin, 0);
+    }
+  });
+  // 下線: 入力された文の幅に伸びる
+  const u = expoOut(prog(t, at(UNDER), at(UNDER + 1)));
+  return { u, leave, L, active: t >= at(-0.2) && t < at(END) };
+}
+
+window.renderAt = function (t) {
+  $("glow").style.background = `radial-gradient(1200px 700px at 50% -10%, rgba(255,255,255,0.06), transparent 70%)`;
+  let under = null, label = null, labelA = 0, speaking = 0;
+  EXAMPLES.forEach((ex, i) => {
+    const r = renderExample(ex, i, t);
+    if (r.active) {
+      under = r;
+      label = ex.label;
+      labelA = Math.min(expoOut(prog(t, b(ex.s - 0.2), b(ex.s + 0.5))), 1 - r.leave);
+      speaking = Math.min(prog(t, b(ex.s - 0.2), b(ex.s)), 1 - prog(t, b(ex.s + SPEAK), b(ex.s + SPEAK + 0.3)));
+    }
+  });
+  $("label").textContent = label || "";
+  set($("label"), labelA);
+  if (under) {
+    $("under").style.left = `${under.L.finStart}px`;
+    $("under").style.width = `${(under.L.finTotal * under.u).toFixed(1)}px`;
+    set($("under"), under.u > 0 ? 1 - under.leave : 0);
+  } else set($("under"), 0);
+  // 話している間だけ、小さな波形を出す
+  const bars = $("mic").children;
+  for (let i = 0; i < bars.length; i++) {
+    const v = 0.5 + 0.5 * Math.sin(t * 13 + i * 1.7) * Math.sin(t * 5 + i);
+    bars[i].style.height = `${(8 + 40 * v * Math.exp(-((i - 3) ** 2) / 6)).toFixed(1)}px`;
+  }
+  $("mic").style.transform = `translateX(-${bars.length * 7}px)`;
+  set($("mic"), speaking);
+  // 最後のことば
+  const tg = Math.min(expoOut(prog(t, b(24.5), b(25.3))), 1 - easeIn(prog(t, b(26.6), b(27.2))));
+  set($("tagline"), tg, `scale(${lerp(1.06, 1, tg).toFixed(4)})`, (1 - tg) * 16);
+  const kids = $("logo").children;
+  [b(27), b(27.5), b(28)].forEach((s, i) => {
+    const p = expoOut(prog(t, s, s + BEAT * 0.9));
+    set(kids[i], p, i === 0 ? `scale(${lerp(0.7, 1, p).toFixed(3)})` : `translateY(${((1 - p) * 20).toFixed(1)}px)`, (1 - p) * 16);
+  });
+  $("logo").style.visibility = t >= b(27) - 0.01 ? "visible" : "hidden";
+};
+window.setBeat = (beat, offset) => { BEAT = beat; OFFSET = offset; };
+const params = new URLSearchParams(location.search);
+renderAt(params.get("t") ? parseFloat(params.get("t")) : 0);
+</script>
+<script src="player.js"></script>
+</body>
+</html>

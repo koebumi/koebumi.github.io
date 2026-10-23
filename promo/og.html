@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="ja"><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  /* X や Slack でリンクを貼ったときのプレビュー画像（1200×630） */
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+  body { background: radial-gradient(700px 420px at 40% 45%, #e5ebea, transparent 70%), #f3f4f1; color: #10262b; font-family: "Zen Kaku Gothic New", sans-serif; position: relative; }
+  .label { position: absolute; left: 84px; top: 92px; font-family: "IBM Plex Mono", monospace; font-size: 20px; letter-spacing: 0.08em; color: #7f8f92; display: flex; align-items: center; gap: 12px; }
+  .label i { width: 11px; height: 11px; border-radius: 50%; background: #fe6f47; display: block; }
+  .said { position: absolute; left: 84px; top: 136px; font-size: 34px; font-weight: 700; color: #9aa8ab; }
+  .said s { text-decoration-color: #fe6f47; text-decoration-thickness: 3px; color: #b8c3c5; }
+  .out { position: absolute; left: 80px; top: 214px; font-size: 92px; font-weight: 900; letter-spacing: -0.01em; }
+  .out em { font-style: normal; color: #fe6f47; }
+  .foot { position: absolute; left: 84px; right: 84px; bottom: 76px; display: flex; align-items: center; gap: 22px; }
+  .foot img { width: 84px; height: 84px; border-radius: 20px; }
+  .name { font-size: 40px; font-weight: 900; line-height: 1.1; }
+  .tag { font-size: 22px; color: #44585c; font-weight: 700; }
+  .meta { margin-left: auto; text-align: right; font-family: "IBM Plex Mono", monospace; font-size: 18px; color: #7f8f92; line-height: 1.7; }
+</style></head>
+<body>
+  <div class="label"><i></i>話したまま → Koebumiが入力</div>
+  <div class="said"><s>えーと、</s>明日の<s>三時に、いや</s>四時に伺います</div>
+  <div class="out">明日の<em>4時</em>に伺います。</div>
+  <div class="foot"><img src="../assets/icon-512.png" alt=""><div><div class="name">Koebumi</div><div class="tag">話すだけで、整った日本語に。</div></div>
+    <div class="meta">無料・オープンソース<br>macOS 26+ ・ Apple silicon</div></div>
+</body></html>

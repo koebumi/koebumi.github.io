@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Koebumi PR split</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;600;800&display=swap">
+<!--
+  案 C「左右で比べる」（15 秒、黒地）。左に話したこと、右に入力されたことを並べ、拍ごとに次の例へ切り替える。
+  renderAt(t) は時刻 t だけで画面を決める。場面は拍（BEAT 秒）に合わせる。
+  文章は、Koebumi（Apple オンデバイス）で実際に整形した結果（句読点は初期設定の「、。」）。
+-->
+<style>
+  :root {
+    --white: #f5f5f7;
+    --gray: #6e6e73;
+    --gray-hi: #a1a1a6;
+    --orange: #fe6f47;
+    --sans: "SF Pro Display", -apple-system, "Hiragino Sans", "Noto Sans JP", sans-serif;
+    --mono: "SF Mono", Menlo, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: #000; }
+  body { font-family: var(--sans); color: var(--white); -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: #000; transform-origin: 0 0; }
+  #glow { position: absolute; inset: 0; }
+  #divider { position: absolute; left: 959px; width: 2px; top: 300px; height: 560px; background: linear-gradient(transparent, #3a3a3e 15%, #3a3a3e 85%, transparent); transform-origin: 50% 50%; }
+  .head { position: absolute; top: 170px; width: 960px; text-align: center; font-size: 34px; font-weight: 600; letter-spacing: 0.06em; }
+  #headL { left: 0; color: var(--gray); }
+  #headR { left: 960px; color: var(--white); }
+  .tag { position: absolute; left: 50%; top: 250px; transform-origin: 50% 50%; margin-left: -150px; width: 300px; text-align: center; font-size: 26px; font-weight: 700; letter-spacing: 0.08em; color: var(--orange); }
+  .side { position: absolute; top: 0; width: 960px; height: 1080px; display: flex; align-items: center; justify-content: center; padding: 0 90px; }
+  .side .txt { font-size: 54px; font-weight: 700; line-height: 1.45; text-wrap: balance; text-align: left; word-break: auto-phrase; }
+  #left .txt { color: var(--gray-hi); }
+  .strike { text-decoration: line-through; text-decoration-color: var(--orange); text-decoration-thickness: 5px; color: var(--gray); }
+  .mono { font-family: var(--mono); font-weight: 600; color: var(--orange); }
+  .key { display: inline-block; font-size: 36px; font-weight: 700; padding: 6px 16px 8px; border-radius: 12px; border: 2px solid var(--orange); color: var(--orange); vertical-align: 8px; margin-left: 12px; }
+  #counter { position: absolute; left: 0; right: 0; top: 880px; display: flex; justify-content: center; gap: 14px; }
+  #counter i { display: block; width: 44px; height: 4px; border-radius: 2px; background: #3a3a3e; }
+  #tagline { position: absolute; left: 0; right: 0; top: 470px; text-align: center; font-size: 104px; font-weight: 800; letter-spacing: -0.01em; }
+  #logo { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  #logo img { width: 210px; height: 210px; border-radius: 48px; }
+  #logo .name { margin-top: 40px; font-size: 128px; font-weight: 800; letter-spacing: -0.01em; line-height: 1; }
+  #logo .url { margin-top: 44px; font-size: 32px; font-weight: 600; color: #a1a1a6; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="glow"></div>
+  <div id="divider"></div>
+  <div class="head" id="headL">話したこと</div>
+  <div class="head" id="headR">入力されたこと</div>
+  <div class="tag" id="tag"></div>
+  <div class="side" id="left" style="left: 0"><div class="txt" id="leftTxt"></div></div>
+  <div class="side" id="right" style="left: 960px"><div class="txt" id="rightTxt"></div></div>
+  <div id="counter"></div>
+  <div id="tagline">話すだけで、整った日本語に。</div>
+  <div id="logo">
+    <img src="assets/icon.png">
+    <div class="name">Koebumi</div>
+    <div class="url">github.com/koebumi/koebumi</div>
+  </div>
+</div>
+<script>
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const expoOut = (p) => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p));
+const easeIn = (p) => p * p * p;
+const lerp = (a, b, p) => a + (b - a) * p;
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+let BEAT = 0.5, OFFSET = 0;
+const b = (n) => OFFSET + n * BEAT;
+window.DURATION = 15;
+
+// [話したこと（[文字列, 消える部分か]）, 入力されたこと（HTML）, 入力先]
+const EXAMPLES = [
+  { tag: "チャット", raw: [["えーと、", 1], ["明日の会議は", 0], ["3時に、いや", 1], ["4時にしてください", 0]], out: "明日の会議は4時にしてください" },
+  { tag: "メール", raw: [["あ、", 1], ["来週の打ち合わせなんですけど、ちょっと遅れて参加します", 0]], out: "来週の打ち合わせですが、少し遅れて参加いたします。" },
+  { tag: "メール", raw: [["えーと、", 1], ["資料は明日までに送ります、よろしくです", 0]], out: "資料は明日までに送ります。よろしくお願いいたします。" },
+  { tag: "Claude Code", raw: [["スラッシュ コンパクト", 0]], out: '<span class="mono">/compact</span>' },
+  { tag: "Claude Code", raw: [["えーと、", 1], ["エージェントインプットのテストを直して。", 0], ["送信", 1]], out: '<span class="mono">AgentInput</span>のテストを直して。<span class="key">↵ Enter</span>' },
+];
+const FIRST = 2, EACH = 4; // 2 拍目から、4 拍ごとに次の例
+(() => { for (let i = 0; i < EXAMPLES.length; i++) $("counter").appendChild(document.createElement("i")); })();
+
+function set(el, opacity, transform = "", blur = 0) {
+  el.style.opacity = opacity.toFixed(3);
+  el.style.visibility = opacity <= 0.002 ? "hidden" : "visible";
+  el.style.transform = transform;
+  el.style.filter = blur > 0.05 ? `blur(${blur.toFixed(2)}px)` : "none";
+}
+
+window.renderAt = function (t) {
+  $("glow").style.background = `radial-gradient(900px 700px at 75% 50%, rgba(255,255,255,0.045), transparent 70%)`;
+  const lastEnd = b(FIRST + EACH * EXAMPLES.length);
+  // 仕切りと見出し: 最初に上下へ伸び、例が終わると縮む
+  const open = expoOut(prog(t, b(0), b(1.5)));
+  const close = easeIn(prog(t, lastEnd - BEAT * 0.6, lastEnd));
+  set($("divider"), Math.min(open, 1 - close), `scaleY(${(open * (1 - close)).toFixed(4)})`);
+  const heads = Math.min(expoOut(prog(t, b(0.75), b(2))), 1 - close);
+  set($("headL"), heads, `translateY(${((1 - heads) * 16).toFixed(1)}px)`);
+  set($("headR"), heads, `translateY(${((1 - heads) * 16).toFixed(1)}px)`);
+
+  let idx = Math.floor((t - b(FIRST)) / (EACH * BEAT));
+  const inRange = idx >= 0 && idx < EXAMPLES.length;
+  if (inRange) {
+    const ex = EXAMPLES[idx];
+    const s = b(FIRST + idx * EACH), e = s + EACH * BEAT;
+    // 左: 1 拍で文字が出る。2 拍目で消える部分に線を引く
+    const total = ex.raw.reduce((n, p) => n + p[0].length, 0);
+    let typed = Math.ceil(total * prog(t, s, s + BEAT * 1.4));
+    const struck = t >= s + BEAT * 1.6;
+    let html = "";
+    for (const [text, drop] of ex.raw) {
+      const n = Math.min(text.length, Math.max(0, typed)); typed -= text.length;
+      if (n > 0) html += drop && struck ? `<span class="strike">${esc(text.slice(0, n))}</span>` : esc(text.slice(0, n));
+    }
+    $("leftTxt").innerHTML = html || "&nbsp;";
+    const li = expoOut(prog(t, s, s + BEAT * 0.6)), lo = easeIn(prog(t, e - BEAT * 0.45, e));
+    set($("left"), Math.min(li, 1 - lo), `translateY(${((1 - li) * 30 - lo * 30).toFixed(1)}px)`, (1 - li) * 10 + lo * 10);
+    // 右: 仕切りの側から滑り込む
+    $("rightTxt").innerHTML = ex.out;
+    const ri = expoOut(prog(t, s + BEAT * 2, s + BEAT * 2.8)), ro = easeIn(prog(t, e - BEAT * 0.45, e));
+    set($("right"), Math.min(ri, 1 - ro), `translateX(${((1 - ri) * -60).toFixed(1)}px) translateY(${(-ro * 30).toFixed(1)}px)`, (1 - ri) * 12 + ro * 10);
+    $("tag").textContent = ex.tag;
+    const ti = expoOut(prog(t, s, s + BEAT * 0.6));
+    set($("tag"), Math.min(ti, 1 - ro), `translateY(${((1 - ti) * 10).toFixed(1)}px)`);
+  } else {
+    set($("left"), 0); set($("right"), 0); set($("tag"), 0);
+  }
+  // 何例目かを下の線で見せる
+  const marks = $("counter").children;
+  for (let i = 0; i < marks.length; i++) marks[i].style.background = inRange && i <= idx ? "#f5f5f7" : "#3a3a3e";
+  set($("counter"), Math.min(heads, 1 - close));
+
+  const tg = Math.min(expoOut(prog(t, lastEnd, lastEnd + BEAT * 0.8)), 1 - easeIn(prog(t, b(26.6), b(27.2))));
+  set($("tagline"), tg, `scale(${lerp(1.06, 1, tg).toFixed(4)})`, (1 - tg) * 16);
+  const kids = $("logo").children;
+  [b(27), b(27.5), b(28)].forEach((st, i) => {
+    const p = expoOut(prog(t, st, st + BEAT * 0.9));
+    set(kids[i], p, i === 0 ? `scale(${lerp(0.7, 1, p).toFixed(3)})` : `translateY(${((1 - p) * 20).toFixed(1)}px)`, (1 - p) * 16);
+  });
+  $("logo").style.visibility = t >= b(27) - 0.01 ? "visible" : "hidden";
+};
+window.setBeat = (beat, offset) => { BEAT = beat; OFFSET = offset; };
+const params = new URLSearchParams(location.search);
+renderAt(params.get("t") ? parseFloat(params.get("t")) : 0);
+</script>
+<script src="player.js"></script>
+</body>
+</html>

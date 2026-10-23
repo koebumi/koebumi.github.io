@@ -1,0 +1,513 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<title>Koebumi promo</title>
+<!--
+  Koebumi の PR 動画（30 秒、1920×1080）。renderAt(t) は時刻 t（秒）だけで画面を決める（乱数・時計・状態を使わない）。
+  ?t=12.5 を付けて開くと、その瞬間の絵になる。書き出しは render.mjs。
+  画面に出す出力は、Koebumi（Apple オンデバイス）で実際に整形した結果（句読点は初期設定の「、。」）。
+-->
+<style>
+  :root {
+    --bg0: #08171b;
+    --bg1: #10313a;
+    --teal: #28636f;
+    --teal-hi: #5fb3c1;
+    --orange: #fe6f47;
+    --text: #f2f6f6;
+    --dim: #93aeb3;
+    --faint: #5f777c;
+    --win: #141b1e;
+    --chrome: #1d2629;
+    --line: rgba(255, 255, 255, 0.08);
+    --sans: "Noto Sans JP", "Hiragino Sans", sans-serif;
+    --mono: "SF Mono", Menlo, "Noto Sans JP", monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--bg0); }
+  body { font-family: var(--sans); color: var(--text); -webkit-font-smoothing: antialiased; }
+  #stage { position: absolute; inset: 0; overflow: hidden; }
+  .abs { position: absolute; }
+  #bg { position: absolute; inset: -200px; }
+
+  /* 見出し */
+  #headline { position: absolute; left: 0; right: 0; top: 74px; text-align: center; }
+  #h1 { font-size: 64px; font-weight: 800; letter-spacing: 0.02em; }
+  #h2 { margin-top: 14px; font-size: 32px; font-weight: 500; color: var(--dim); height: 44px; }
+  .hl { color: var(--orange); }
+
+  /* 最初と最後 */
+  #intro, #end { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+  .app-icon { width: 230px; height: 230px; border-radius: 54px; box-shadow: 0 30px 80px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255,255,255,0.08) inset; }
+  .wordmark { margin-top: 44px; font-size: 120px; font-weight: 800; letter-spacing: 0.01em; line-height: 1; }
+  .tagline { margin-top: 30px; font-size: 54px; font-weight: 700; }
+  #end .app-icon { width: 190px; height: 190px; border-radius: 45px; }
+  #end .wordmark { font-size: 104px; margin-top: 36px; }
+  #end .tagline { font-size: 46px; margin-top: 24px; }
+  .url { margin-top: 44px; font-size: 38px; font-weight: 700; padding: 18px 40px; border-radius: 999px; background: rgba(254, 111, 71, 0.14); color: #ffb39d; border: 2px solid rgba(254, 111, 71, 0.45); }
+  .meta { margin-top: 26px; font-size: 28px; color: var(--dim); }
+  .ring { position: absolute; width: 230px; height: 230px; border-radius: 54px; border: 3px solid var(--teal-hi); }
+
+  /* ウィンドウ */
+  .win { position: absolute; left: 370px; top: 236px; width: 1180px; height: 560px; border-radius: 20px; background: var(--win); overflow: hidden;
+         box-shadow: 0 40px 100px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.09); }
+  .chrome { height: 50px; background: var(--chrome); display: flex; align-items: center; padding: 0 20px; border-bottom: 1px solid var(--line); position: relative; }
+  .lights { display: flex; gap: 9px; }
+  .lights i { width: 14px; height: 14px; border-radius: 50%; display: block; }
+  .lights i:nth-child(1) { background: #ff5f57; } .lights i:nth-child(2) { background: #febc2e; } .lights i:nth-child(3) { background: #28c840; }
+  .title { position: absolute; left: 0; right: 0; text-align: center; font-size: 19px; color: var(--dim); pointer-events: none; }
+
+  /* チャット */
+  #chat .body { display: flex; height: 510px; }
+  #chat .side { width: 250px; background: #10171a; border-right: 1px solid var(--line); padding: 26px 22px; }
+  #chat .ws { font-size: 22px; font-weight: 800; margin-bottom: 26px; }
+  #chat .ch { font-size: 21px; color: var(--dim); padding: 9px 12px; border-radius: 8px; margin-bottom: 4px; }
+  #chat .ch.on { background: rgba(95, 179, 193, 0.18); color: var(--text); font-weight: 700; }
+  #chat .main { flex: 1; position: relative; }
+  #chat .head { padding: 22px 34px; font-size: 24px; font-weight: 800; border-bottom: 1px solid var(--line); }
+  .msg { position: absolute; left: 34px; right: 34px; display: flex; gap: 18px; }
+  .avatar { width: 54px; height: 54px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 24px; flex: none; }
+  .who { font-size: 21px; font-weight: 800; } .who span { font-weight: 400; color: var(--faint); margin-left: 10px; font-size: 18px; }
+  .said { font-size: 29px; margin-top: 6px; }
+  .input { position: absolute; left: 34px; right: 34px; bottom: 30px; height: 72px; border-radius: 14px; border: 2px solid rgba(255, 255, 255, 0.16); display: flex; align-items: center; padding: 0 24px; font-size: 28px; }
+  .ph { color: var(--faint); }
+  .paste { border-radius: 6px; padding: 2px 4px; margin: 0 -4px; }
+  .caret { display: inline-block; width: 3px; height: 34px; background: var(--teal-hi); margin-left: 3px; vertical-align: middle; }
+
+  /* メール */
+  #mail .row { display: flex; gap: 18px; padding: 20px 40px; border-bottom: 1px solid var(--line); font-size: 25px; }
+  #mail .row b { color: var(--dim); font-weight: 500; width: 70px; }
+  #mail .text { padding: 34px 40px; font-size: 31px; line-height: 1.75; }
+
+  /* ターミナル */
+  #term { background: #0d1113; }
+  #term .screen { padding: 30px 40px; font-family: var(--mono); font-size: 26px; line-height: 1.6; position: relative; height: 510px; }
+  .tl { white-space: pre; }
+  .tdim { color: var(--faint); }
+  .tmid { color: var(--dim); }
+  .rule { border-top: 2px solid #3b4a4f; margin: 6px 0; }
+  .box { position: absolute; left: 40px; right: 40px; }
+  .sel { color: #8fd3df; }
+  .badge { display: inline-block; font-family: var(--sans); font-size: 20px; font-weight: 800; padding: 2px 12px; border-radius: 8px; background: var(--orange); color: #1b0e0a; margin-left: 14px; vertical-align: 3px; }
+  .uline { text-decoration: underline; text-decoration-color: var(--orange); text-decoration-thickness: 3px; text-underline-offset: 6px; }
+
+  /* 話した言葉 */
+  #spoken { position: absolute; left: 0; right: 0; top: 818px; display: flex; justify-content: center; }
+  #spoken .spk { max-width: 1500px; padding: 14px 30px; border-radius: 16px; background: rgba(255, 255, 255, 0.07); border: 1px solid rgba(255, 255, 255, 0.12); font-size: 31px; color: #d9e6e8; display: flex; align-items: center; gap: 18px; white-space: nowrap; }
+  #spoken .label { font-size: 20px; font-weight: 800; color: var(--orange); letter-spacing: 0.06em; }
+  .drop { text-decoration-color: var(--orange); text-decoration-thickness: 3px; }
+
+  /* 音声バー（アプリと同じ形と色） */
+  #voicebar { position: absolute; left: 50%; top: 925px; width: 300px; height: 102px; margin-left: -150px; border-radius: 51px;
+              background: linear-gradient(#45445a, #3a394d); border: 2px solid rgba(255, 255, 255, 0.22); box-shadow: 0 18px 50px rgba(0, 0, 0, 0.5); }
+  #voicebar img { position: absolute; left: 15px; top: 15px; width: 68px; height: 68px; }
+  #bars { position: absolute; left: 112px; top: 0; height: 98px; display: flex; align-items: center; gap: 9px; }
+  #bars i { display: block; width: 6px; border-radius: 3px; background: #f4f4f6; }
+  #dots { position: absolute; left: 160px; top: 38px; display: flex; gap: 9px; }
+  #dots i { display: block; width: 9px; height: 9px; border-radius: 50%; background: #f4f4f6; }
+
+  /* Fn キー */
+  #fn { position: absolute; left: 118px; top: 892px; width: 128px; height: 128px; border-radius: 22px; background: linear-gradient(#323a3e, #232a2d);
+        border: 1px solid rgba(255, 255, 255, 0.12); }
+  #fn .fnt { position: absolute; right: 18px; top: 12px; font-size: 26px; font-weight: 600; color: #e8eef0; }
+  #fn svg { position: absolute; left: 16px; bottom: 16px; }
+  #fnlabel { position: absolute; left: 118px; width: 128px; top: 1028px; text-align: center; font-size: 19px; color: var(--dim); }
+
+  /* 特徴 */
+  #features { position: absolute; left: 0; right: 0; top: 390px; display: flex; justify-content: center; gap: 44px; }
+  .card { width: 500px; height: 330px; border-radius: 26px; background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.11); padding: 44px 42px; }
+  .card .ico { width: 70px; height: 70px; border-radius: 18px; background: rgba(95, 179, 193, 0.16); display: flex; align-items: center; justify-content: center; }
+  .card h3 { margin-top: 28px; font-size: 38px; font-weight: 800; }
+  .card p { margin-top: 16px; font-size: 25px; line-height: 1.6; color: var(--dim); }
+
+  #note { position: absolute; right: 44px; bottom: 26px; font-size: 19px; color: var(--faint); }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg"></div>
+
+  <div id="headline"><div id="h1"></div><div id="h2"></div></div>
+
+  <div id="intro">
+    <div class="ring" id="ring1"></div><div class="ring" id="ring2"></div>
+    <img class="app-icon" id="introIcon" src="assets/icon.png">
+    <div class="wordmark" id="introWord">Koebumi</div>
+    <div class="tagline" id="introTag">話すだけで、整った日本語に。</div>
+  </div>
+
+  <!-- チャット -->
+  <div class="win" id="chat">
+    <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="title">チャット</div></div>
+    <div class="body">
+      <div class="side">
+        <div class="ws">デザインチーム</div>
+        <div class="ch"># 全体</div>
+        <div class="ch on"># プロジェクト</div>
+        <div class="ch"># 雑談</div>
+      </div>
+      <div class="main">
+        <div class="head"># プロジェクト</div>
+        <div class="msg" style="top: 100px">
+          <div class="avatar" style="background:#6b5bd2">佐</div>
+          <div><div class="who">佐藤<span>10:02</span></div><div class="said">明日の会議、何時からにしましょうか？</div></div>
+        </div>
+        <div class="msg" id="chatMine" style="top: 210px">
+          <div class="avatar" style="background:var(--teal)">あ</div>
+          <div><div class="who">あなた<span>10:03</span></div><div class="said">明日の会議は4時にしてください</div></div>
+        </div>
+        <div class="input"><span id="chatInput"></span></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- メール -->
+  <div class="win" id="mail">
+    <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="title">新規メッセージ</div></div>
+    <div class="row"><b>宛先</b>田中 様</div>
+    <div class="row"><b>件名</b>来週の打ち合わせについて</div>
+    <div class="text">田中様<br><br><span id="mailBody"></span></div>
+  </div>
+
+  <!-- ターミナル（Claude Code） -->
+  <div class="win" id="term">
+    <div class="chrome"><div class="lights"><i></i><i></i><i></i></div><div class="title">claude — ~/workspace/app</div></div>
+    <div class="screen">
+      <div id="termHistory"></div>
+      <div class="box" id="termBox">
+        <div class="rule"></div>
+        <div class="tl" id="termInput"></div>
+        <div class="rule"></div>
+        <div class="tl tdim" style="font-size:20px">? for shortcuts</div>
+      </div>
+      <div class="box" id="termPrompt">
+        <div class="rule"></div>
+        <div class="tl"><b>Bash command</b></div>
+        <div class="tl">  npm run deploy</div>
+        <div class="tl tdim">  Deploy to production</div>
+        <div class="tl" style="margin-top:8px">Do you want to proceed?</div>
+        <div class="tl" id="opt1"></div>
+        <div class="tl" id="opt2"></div>
+        <div class="tl" id="opt3"></div>
+        <div class="tl tdim" style="font-size:20px;margin-top:6px">Esc to cancel</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="features">
+    <div class="card" id="card1">
+      <div class="ico"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#8fd3df" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></div>
+      <h3>APIキーなしで動く</h3>
+      <p>Appleのオンデバイスモデルと、このMacで動く音声認識で使えます。</p>
+    </div>
+    <div class="card" id="card2">
+      <div class="ico"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#8fd3df" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h13"/></svg></div>
+      <h3>日本語らしく整える</h3>
+      <p>句読点や表記をそろえ、くだけた話し方もビジネス敬語に直せます。</p>
+    </div>
+    <div class="card" id="card3">
+      <div class="ico"><svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="#8fd3df" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/></svg></div>
+      <h3>無料・オープンソース</h3>
+      <p>MITライセンスで、ソースコードはGitHubで公開しています。</p>
+    </div>
+  </div>
+
+  <div id="end">
+    <img class="app-icon" src="assets/icon.png">
+    <div class="wordmark">Koebumi</div>
+    <div class="tagline">話すだけで、整った日本語に。</div>
+    <div class="url">github.com/koebumi/koebumi</div>
+    <div class="meta">macOS 26以降・Appleシリコン　|　無料</div>
+  </div>
+
+  <div id="spoken"><div class="spk"><span class="label">話した言葉</span><span id="spokenText"></span></div></div>
+
+  <div id="voicebar">
+    <img id="vbMic" src="assets/mic.png"><img id="vbSpark" src="assets/sparkle.png">
+    <div id="bars"></div>
+    <div id="dots"><i></i><i></i><i></i></div>
+  </div>
+
+  <div id="fn">
+    <div class="fnt">fn</div>
+    <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#e8eef0" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.8 3 2.8 15 0 18M12 3c-2.8 3-2.8 15 0 18"/></svg>
+  </div>
+  <div id="fnlabel">押して話す</div>
+
+  <div id="note">画面の文章は、Koebumi（Appleのオンデバイスモデル）で実際に整形した結果です</div>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+const prog = (t, a, b) => clamp((t - a) / (b - a));
+const easeOut = (p) => 1 - Math.pow(1 - p, 3);
+const easeInOut = (p) => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2);
+// 閉じた形のばね。s は動き始めてからの秒数
+function spring(s, freq = 1.7, damping = 0.62) {
+  if (s <= 0) return 0;
+  const w = 2 * Math.PI * freq, wd = w * Math.sqrt(1 - damping * damping);
+  return 1 - Math.exp(-damping * w * s) * (Math.cos(wd * s) + (damping * w / wd) * Math.sin(wd * s));
+}
+// 入って出る要素の見え方。in0〜in1 で現れ、out0〜out1 で消える
+function life(t, in0, in1, out0, out1) {
+  return { a: Math.min(easeOut(prog(t, in0, in1)), 1 - easeInOut(prog(t, out0, out1))), p: easeOut(prog(t, in0, in1)), q: easeInOut(prog(t, out0, out1)) };
+}
+function show(el, a, transform = "") {
+  el.style.opacity = a.toFixed(3);
+  el.style.visibility = a <= 0.001 ? "hidden" : "visible";
+  el.style.transform = transform;
+}
+const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;");
+
+// ---- 時間割（秒） ----
+const SCENES = {
+  intro: [0.0, 3.1],
+  chat: [3.0, 9.7],
+  mail: [9.6, 14.8],
+  term: [14.7, 23.7],
+  features: [23.4, 27.1],
+  end: [27.0, 30.0],
+};
+
+// 見出し（scene ごと。h2 は区間ごとに変える）
+const HEADLINES = [
+  { s: 3.15, e: 9.55, h1: '<span class="hl">Fn</span>キーを押して、話すだけ', h2: [[3.15, '言いよどみや言い直しは、取り除いて入力します']] },
+  { s: 9.75, e: 14.65, h1: 'メールでは、ていねいな文章に', h2: [[9.75, 'くだけた話し方も、ビジネス敬語に直せます']] },
+  { s: 14.85, e: 23.45, h1: '<span class="hl">Claude Code</span>も、声で操作', h2: [[14.85, '「スラッシュ コンパクト」で /compact'], [17.2, '許可の確認にも、声で答えられます'], [20.6, 'ファイル名は実際の表記に。「送信」でEnterまで']] },
+  { s: 23.6, e: 26.9, h1: 'Macの中で、無料で動く', h2: [[23.6, '']] },
+];
+
+// 話した言葉。[文字列, 消える部分か]。strike で消える部分に線を引く
+const SPOKEN = [
+  { s: 4.05, e: 6.55, strike: 6.7, hide: 7.9, parts: [["えーと、", 1], ["明日の会議は", 0], ["3時に、いや", 1], ["4時にしてください", 0]] },
+  { s: 10.25, e: 12.0, strike: 12.15, hide: 13.6, parts: [["あ、", 1], ["来週の打ち合わせなんですけど、", 0], ["ちょっと遅れて参加します", 0]] },
+  { s: 15.2, e: 15.9, strike: 99, hide: 17.0, parts: [["スラッシュ コンパクト", 0]] },
+  { s: 17.75, e: 18.75, strike: 99, hide: 20.2, parts: [["いいえ、先にビルドだけして", 0]] },
+  { s: 20.85, e: 22.05, strike: 22.2, hide: 23.5, parts: [["えーと、", 1], ["エージェントインプットのテストを直して。", 0], ["送信", 1]] },
+];
+
+// 録音・処理の区間（音声バーと Fn キー）
+const TAKES = [
+  { rec: 3.95, proc: 6.65, done: 7.3 },
+  { rec: 10.15, proc: 12.1, done: 12.75 },
+  { rec: 15.1, proc: 15.95, done: 16.3 },
+  { rec: 17.65, proc: 18.8, done: 19.15 },
+  { rec: 20.75, proc: 22.1, done: 22.55 },
+];
+
+// バーの数と高さ（時刻だけで決める）
+const BAR_N = 11;
+(() => { const b = $("bars"); for (let i = 0; i < BAR_N; i++) b.appendChild(document.createElement("i")); })();
+
+function renderBackground(t) {
+  const x1 = 30 + 8 * Math.sin(t * 0.25), y1 = 20 + 6 * Math.cos(t * 0.2);
+  const x2 = 75 + 6 * Math.cos(t * 0.22), y2 = 85 + 5 * Math.sin(t * 0.3);
+  $("bg").style.background =
+    `radial-gradient(900px 700px at ${x1}% ${y1}%, rgba(40,99,111,0.55), transparent 70%),` +
+    `radial-gradient(800px 600px at ${x2}% ${y2}%, rgba(254,111,71,0.13), transparent 70%),` +
+    `linear-gradient(160deg, var(--bg1), var(--bg0) 60%)`;
+}
+
+function renderHeadline(t) {
+  const h = HEADLINES.find((x) => t >= x.s - 0.4 && t <= x.e + 0.4);
+  if (!h) { show($("headline"), 0); return; }
+  const l = life(t, h.s, h.s + 0.45, h.e - 0.3, h.e);
+  show($("headline"), l.a, `translateY(${(1 - l.p) * 24 - l.q * 16}px)`);
+  $("h1").innerHTML = h.h1;
+  let sub = h.h2[0];
+  for (const x of h.h2) if (t >= x[0]) sub = x;
+  const idx = h.h2.indexOf(sub);
+  const subIn = idx === 0 ? 1 : easeOut(prog(t, sub[0], sub[0] + 0.35));
+  $("h2").innerHTML = sub[1];
+  $("h2").style.opacity = subIn.toFixed(3);
+  $("h2").style.transform = `translateY(${(1 - subIn) * 12}px)`;
+}
+
+function renderIntro(t) {
+  const [s, e] = SCENES.intro;
+  const out = easeInOut(prog(t, e - 0.45, e));
+  const ip = spring(t - 0.15);
+  $("introIcon").style.transform = `scale(${0.55 + 0.45 * ip})`;
+  $("introIcon").style.opacity = clamp(ip * 1.6).toFixed(3);
+  const wp = easeOut(prog(t, 0.55, 1.15));
+  $("introWord").style.opacity = wp; $("introWord").style.transform = `translateY(${(1 - wp) * 30}px)`;
+  const tp = easeOut(prog(t, 1.0, 1.6));
+  $("introTag").style.opacity = tp; $("introTag").style.transform = `translateY(${(1 - tp) * 24}px)`;
+  // アイコンから広がる輪（声の広がり）
+  for (const [id, d] of [["ring1", 0.45], ["ring2", 0.95]]) {
+    const r = prog(t, d, d + 1.4);
+    const el = $(id);
+    el.style.opacity = (r > 0 && r < 1 ? (1 - r) * 0.7 : 0).toFixed(3);
+    el.style.transform = `translateY(-${(44 + 30 + 54) / 2 + 60}px) scale(${1 + r * 0.9})`;
+  }
+  show($("intro"), 1 - out, `scale(${1 - out * 0.06}) translateY(${-out * 30}px)`);
+}
+
+function windowLife(el, scene, t) {
+  const [s, e] = SCENES[scene];
+  const l = life(t, s + 0.05, s + 0.6, e - 0.4, e);
+  show(el, l.a, `translateY(${(1 - l.p) * 50 - l.q * 30}px) scale(${0.965 + 0.035 * l.p})`);
+}
+
+function renderSpoken(t) {
+  const sp = SPOKEN.find((x) => t >= x.s - 0.2 && t <= x.hide + 0.3);
+  if (!sp) { show($("spoken"), 0); return; }
+  const l = life(t, sp.s - 0.2, sp.s + 0.1, sp.hide, sp.hide + 0.3);
+  show($("spoken"), l.a, `translateY(${(1 - l.p) * 14}px)`);
+  const total = sp.parts.reduce((n, p) => n + p[0].length, 0);
+  let shown = Math.floor(total * prog(t, sp.s, sp.e));
+  const sk = easeOut(prog(t, sp.strike, sp.strike + 0.35));
+  let html = "";
+  for (const [text, drop] of sp.parts) {
+    const n = Math.min(text.length, shown);
+    shown -= n;
+    if (n <= 0) continue;
+    const part = esc(text.slice(0, n));
+    html += drop && sk > 0
+      ? `<span class="drop" style="text-decoration-line:line-through;opacity:${(1 - 0.6 * sk).toFixed(3)};color:rgb(${Math.round(217 + 37 * sk)},${Math.round(230 - 120 * sk)},${Math.round(232 - 160 * sk)})">${part}</span>`
+      : `<span>${part}</span>`;
+  }
+  $("spokenText").innerHTML = html || "&nbsp;";
+}
+
+function renderVoiceBar(t) {
+  const tk = TAKES.find((x) => t >= x.rec - 0.1 && t <= x.done + 0.35);
+  if (!tk) { show($("voicebar"), 0); return; }
+  const inP = spring(t - tk.rec, 2.2, 0.7);
+  const outP = easeInOut(prog(t, tk.done, tk.done + 0.3));
+  show($("voicebar"), clamp(inP * 1.5) * (1 - outP), `translateY(${(1 - inP) * 40 + outP * 30}px) scale(${0.9 + 0.1 * inP})`);
+  const recording = t < tk.proc;
+  $("vbMic").style.opacity = recording ? 1 : 0;
+  $("vbSpark").style.opacity = recording ? 0 : 1;
+  $("bars").style.opacity = recording ? 1 : 0;
+  $("dots").style.opacity = recording ? 0 : 1;
+  const bars = $("bars").children;
+  for (let i = 0; i < BAR_N; i++) {
+    const c = i - (BAR_N - 1) / 2;
+    const env = Math.exp(-(c * c) / 18);
+    const v = 0.5 + 0.5 * Math.sin(t * 13.1 + i * 1.7) * Math.sin(t * 5.3 + i * 0.9 + 1.3);
+    const talking = 0.55 + 0.45 * Math.sin(t * 3.1) ** 2;
+    bars[i].style.height = `${(10 + 52 * env * v * talking).toFixed(1)}px`;
+  }
+  const dots = $("dots").children;
+  for (let i = 0; i < 3; i++) dots[i].style.opacity = (0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * 9 - i * 1.1))).toFixed(3);
+}
+
+function renderFnKey(t) {
+  const demo = t > SCENES.chat[0] + 0.2 && t < SCENES.term[1] - 0.2;
+  const l = life(t, SCENES.chat[0] + 0.2, SCENES.chat[0] + 0.7, SCENES.term[1] - 0.6, SCENES.term[1] - 0.2);
+  show($("fnlabel"), demo ? l.a : 0);
+  // 録音している間は押しっぱなし（押し続けて話し、離すと確定）
+  const tk = TAKES.find((x) => t >= x.rec - 0.12 && t <= x.proc + 0.1);
+  let press = 0;
+  if (tk) press = Math.min(easeOut(prog(t, tk.rec - 0.12, tk.rec)), 1 - easeOut(prog(t, tk.proc - 0.02, tk.proc + 0.1)));
+  show($("fn"), demo ? l.a : 0, `translateY(${press * 7}px)`);
+  $("fn").style.boxShadow = `0 ${Math.round(10 - press * 7)}px 0 #11171a, 0 0 0 ${Math.round(press * 5)}px rgba(254,111,71,${(0.55 * press).toFixed(3)})`;
+}
+
+function pasteHighlight(t, at) {
+  const p = prog(t, at, at + 0.9);
+  return `background: rgba(254,111,71,${(0.35 * (1 - p)).toFixed(3)})`;
+}
+
+function renderChat(t) {
+  windowLife($("chat"), "chat", t);
+  const pasteAt = 7.3, sendAt = 8.25;
+  const input = $("chatInput");
+  if (t < pasteAt) input.innerHTML = `<span class="ph">#プロジェクト へのメッセージ</span>`;
+  else if (t < sendAt) input.innerHTML = `<span class="paste" style="${pasteHighlight(t, pasteAt)}">明日の会議は4時にしてください</span><span class="caret"></span>`;
+  else input.innerHTML = `<span class="ph">#プロジェクト へのメッセージ</span>`;
+  const m = easeOut(prog(t, sendAt, sendAt + 0.4));
+  show($("chatMine"), m, `translateY(${(1 - m) * 20}px)`);
+}
+
+function renderMail(t) {
+  windowLife($("mail"), "mail", t);
+  const pasteAt = 12.8;
+  $("mailBody").innerHTML = t < pasteAt ? `<span class="caret"></span>`
+    : `<span class="paste" style="${pasteHighlight(t, pasteAt)}">来週の打ち合わせですが、少し遅れて参加いたします。</span><span class="caret"></span>`;
+}
+
+function renderTerm(t) {
+  windowLife($("term"), "term", t);
+  // 送った行は上の履歴に残す
+  const hist = [`<div class="tl tmid">⏺ ビルドとテストが通りました。続けてデプロイします。</div>`];
+  if (t >= 16.75) hist.push(`<div class="tl tdim">❯ /compact</div>`);
+  if (t >= 19.95) hist.push(`<div class="tl tdim">❯ 先にビルドだけして</div>`);
+  if (t >= 22.95) hist.push(`<div class="tl tdim">❯ AgentInputのテストを直して。</div>`);
+  $("termHistory").innerHTML = hist.join("");
+  const top = 30 + 42 * hist.length + 14;
+  $("termBox").style.top = `${top}px`;
+  $("termPrompt").style.top = `${30 + 42 * hist.length + 14}px`;
+
+  // 許可の確認を出している間は入力欄が消える
+  const promptOn = t >= 17.2 && t < 19.3;
+  show($("termPrompt"), promptOn ? easeOut(prog(t, 17.2, 17.45)) : 0);
+  show($("termBox"), promptOn ? 0 : 1);
+  const sel = t < 18.95 ? 1 : t < 19.08 ? 2 : 3;
+  const opts = ["1. Yes", "2. Yes, and don't ask again for npm run deploy", "3. No"];
+  ["opt1", "opt2", "opt3"].forEach((id, i) => {
+    $(id).innerHTML = (sel === i + 1 ? '<span class="sel">❯ ' : "  ") + esc(opts[i]) + (sel === i + 1 ? "</span>" : "");
+  });
+
+  let line = "", extra = "";
+  if (t >= 16.3 && t < 16.75) line = `<span class="paste" style="${pasteHighlight(t, 16.3)}">/compact</span>`;
+  else if (t >= 19.35 && t < 19.95) line = `<span class="paste" style="${pasteHighlight(t, 19.35)}">先にビルドだけして</span>`;
+  else if (t >= 22.55 && t < 22.95) {
+    line = `<span class="paste" style="${pasteHighlight(t, 22.55)}"><span class="uline">AgentInput</span>のテストを直して。</span>`;
+  }
+  // Enter を押したことを見せる
+  for (const at of [16.6, 19.8, 22.8]) {
+    const b = prog(t, at, at + 0.45);
+    if (b > 0 && b < 1) extra = `<span class="badge" style="opacity:${(1 - b * b).toFixed(3)}">↵ Enter</span>`;
+  }
+  $("termInput").innerHTML = `<span class="sel">❯ </span>${line}<span class="caret" style="height:28px"></span>${extra}`;
+}
+
+function renderFeatures(t) {
+  const [s, e] = SCENES.features;
+  ["card1", "card2", "card3"].forEach((id, i) => {
+    const l = life(t, s + 0.2 + i * 0.15, s + 0.75 + i * 0.15, e - 0.4, e);
+    show($(id), l.a, `translateY(${(1 - l.p) * 60 - l.q * 20}px)`);
+  });
+  show($("features"), t > s && t < e ? 1 : 0);
+}
+
+function renderEnd(t) {
+  const [s] = SCENES.end;
+  const kids = $("end").children;
+  for (let i = 0; i < kids.length; i++) {
+    const p = i === 0 ? spring(t - s - 0.1) : easeOut(prog(t, s + 0.25 + i * 0.12, s + 0.75 + i * 0.12));
+    kids[i].style.opacity = clamp(p * 1.4).toFixed(3);
+    kids[i].style.transform = i === 0 ? `scale(${0.6 + 0.4 * p})` : `translateY(${(1 - p) * 26}px)`;
+  }
+  show($("end"), t >= s ? 1 : 0);
+}
+
+function renderNote(t) {
+  const l = life(t, 4.2, 4.8, SCENES.term[1] - 0.6, SCENES.term[1] - 0.2);
+  show($("note"), l.a * 0.9);
+}
+
+window.renderAt = function (t) {
+  renderBackground(t);
+  renderHeadline(t);
+  renderIntro(t);
+  renderChat(t);
+  renderMail(t);
+  renderTerm(t);
+  renderFeatures(t);
+  renderEnd(t);
+  renderSpoken(t);
+  renderVoiceBar(t);
+  renderFnKey(t);
+  renderNote(t);
+};
+window.DURATION = 30;
+const q = new URLSearchParams(location.search).get("t");
+renderAt(q ? parseFloat(q) : 0);
+</script>
+</body>
+</html>
