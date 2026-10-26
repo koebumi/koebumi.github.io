@@ -1,32 +1,46 @@
 <!doctype html>
 <html lang="ja"><head><meta charset="utf-8">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700;900&family=IBM+Plex+Mono:wght@500&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
 <style>
-  /* X や Slack でリンクを貼ったときのプレビュー画像（1200×630）。サイトのファーストビューと同じ見出しにする */
+  /* X や Slack でリンクを貼ったときのプレビュー画像（1200×630）。サイトのファーストビューと同じ見出し・色・書体にする */
+  :root { --ink: #0a0a0a; --ink-2: #404040; --mute: #6b6b6b; --surface: #f5f5f4; --surface-2: #ececea; --line: #e5e5e3;
+          --teal: #2b6772; --teal-ink: #1b4851; --teal-soft: #dcecef; --orange: #fe6f47; }
   html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
-  body { background: radial-gradient(520px 360px at 12% 18%, #cfe6ea, transparent 70%), radial-gradient(520px 360px at 92% 30%, #ffe1d5, transparent 70%), #f3f5f3; color: #10262b; font-family: "Zen Kaku Gothic New", sans-serif; position: relative; }
-  .label { position: absolute; left: 84px; top: 70px; font-family: "IBM Plex Mono", monospace; font-size: 20px; letter-spacing: 0.08em; color: #5b6c70; display: flex; align-items: center; gap: 12px; }
-  .label i { width: 11px; height: 11px; border-radius: 50%; background: #fe6f47; display: block; }
-  h1 { position: absolute; left: 80px; top: 104px; margin: 0; font-size: 92px; font-weight: 500; line-height: 1.14; letter-spacing: -0.02em; }
-  h1 span { color: #7d8b8e; }
-  .chips { position: absolute; left: 84px; right: 84px; top: 352px; display: flex; gap: 14px; }
-  .chip { display: flex; align-items: center; gap: 10px; height: 60px; padding: 0 16px; border-radius: 16px; background: #fff; box-shadow: 0 10px 30px rgba(15, 35, 40, 0.08); font-size: 20px; font-weight: 700; color: #4a5c60; white-space: nowrap; }
-  .chip b { color: #fe6f47; font-weight: 500; }
-  .chip code { font-family: "IBM Plex Mono", monospace; font-size: 19px; font-weight: 500; color: #1b4851; background: #dcecef; border-radius: 8px; padding: 3px 10px; }
-  .foot { position: absolute; left: 84px; right: 84px; bottom: 64px; display: flex; align-items: center; gap: 22px; }
-  .foot img { width: 84px; height: 84px; border-radius: 20px; }
-  .name { font-size: 40px; font-weight: 900; line-height: 1.1; }
-  .tag { font-size: 22px; color: #44585c; font-weight: 700; }
-  .meta { margin-left: auto; text-align: right; font-family: "IBM Plex Mono", monospace; font-size: 18px; color: #5b6c70; line-height: 1.7; }
+  body { position: relative; background: #ffffff; color: var(--ink); font-family: "Geist", "Zen Kaku Gothic New", sans-serif; -webkit-font-smoothing: antialiased; text-autospace: normal; }
+  .top { position: absolute; left: 64px; right: 64px; top: 48px; display: flex; justify-content: space-between; align-items: center; }
+  .brand { display: flex; align-items: center; gap: 12px; font-size: 24px; line-height: 32px; font-weight: 700; }
+  .brand img { width: 40px; height: 40px; border-radius: 8px; }
+  .label { font-family: "Geist Mono", monospace; font-size: 18px; line-height: 28px; letter-spacing: 0.05em; color: var(--mute); }
+  /* 見出しだけ、左から右へ墨から灰へ */
+  h1 { position: absolute; left: 64px; top: 136px; margin: 0; padding-bottom: 8px; font-size: 96px; line-height: 1; font-weight: 500; letter-spacing: -0.025em; font-feature-settings: "palt";
+       background-image: linear-gradient(90deg, #000000, #666666); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .panel { position: absolute; left: 64px; right: 64px; bottom: 48px; height: 200px; overflow: hidden; border-radius: 24px; background: var(--surface); }
+  .wave { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 8px; }
+  .wave i { flex: none; width: 4px; height: 184px; border-radius: 9999px; background: var(--surface-2); }
+  .chips { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; gap: 12px; }
+  .chip { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 16px; background: #ffffff; box-shadow: 0 1px 2px rgba(10, 10, 10, 0.06), 0 16px 48px rgba(10, 10, 10, 0.1);
+          font-size: 18px; line-height: 28px; font-weight: 600; color: var(--ink-2); white-space: nowrap; }
+  .chip b { color: var(--orange); font-weight: 500; }
+  .chip code { padding: 2px 8px; border-radius: 6px; background: var(--teal-soft); color: var(--teal-ink); font-family: "Geist Mono", monospace; font-size: 18px; line-height: 28px; font-weight: 500; }
 </style></head>
 <body>
-  <div class="label"><i></i>CLAUDE CODE ・ CODEX</div>
-  <h1>Claude Codeに、<br><span>声で指示する。</span></h1>
-  <div class="chips">
-    <div class="chip">「はい」<b>→</b><code>1. Yes</code></div>
-    <div class="chip">「スラッシュ コンパクト」<b>→</b><code>/compact</code></div>
-    <div class="chip">「〜して、送信」<b>→</b><code>↵ Enter</code></div>
+  <div class="top">
+    <div class="brand"><img src="../assets/icon-512.png" alt="">Koebumi</div>
+    <div class="label">macOSの音声入力 ・ 無料・オープンソース</div>
   </div>
-  <div class="foot"><img src="../assets/icon-512.png" alt=""><div><div class="name">Koebumi</div><div class="tag">メールやチャットの文章も、同じFnキーで。</div></div>
-    <div class="meta">無料・オープンソース<br>macOS 26+ ・ Apple silicon</div></div>
+  <h1>Claude Codeに、<br>声で指示する。</h1>
+  <div class="panel">
+    <div class="wave" id="wave"></div>
+    <div class="chips">
+      <div class="chip">「はい」<b>→</b><code>1. Yes</code></div>
+      <div class="chip">「スラッシュ コンパクト」<b>→</b><code>/compact</code></div>
+      <div class="chip">「〜して、送信」<b>→</b><code>↵ Enter</code></div>
+    </div>
+  </div>
+  <script>
+    // サイトのファーストビューと同じ、話した声の輪郭のような波形
+    const wave = document.getElementById("wave"), n = 89;
+    wave.innerHTML = "<i></i>".repeat(n);
+    [...wave.children].forEach((b, i) => { const c = (i - (n - 1) / 2) / (n / 3); b.style.transform = `scaleY(${(0.06 + 0.9 * Math.exp(-c * c) * Math.abs(Math.sin(i * 0.37) * Math.sin(i * 0.11 + 1))).toFixed(3)})`; });
+  </script>
 </body></html>
