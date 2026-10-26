@@ -187,7 +187,8 @@
   /* 節 */
   .sec { padding-block: var(--s-800); }
   @media (min-width: 1024px) { .sec { padding-block: var(--s-900); } }
-  .sec + .sec:not(.dark):not(.band) { padding-top: 0; }
+  /* 白い節が続くときだけ、上の余白を詰める（暗い節や帯の直後は詰めない） */
+  .sec:not(.dark):not(.band) + .sec:not(.dark):not(.band) { padding-top: 0; }
   .sec-head { display: grid; gap: var(--s-300); max-width: 960px; }
   .sec-head.mid { margin-inline: auto; justify-items: center; text-align: center; }
 
