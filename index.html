@@ -15,643 +15,1020 @@
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:site" content="@koebumi_app">
 <meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light">
 <link rel="icon" href="assets/favicon.png" type="image/png">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<!-- フォントは描画を止めずに読み込む -->
-<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'">
-<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&family=IBM+Plex+Mono:wght@400;500&display=swap"></noscript>
+<!-- 英字は Geist、日本語は Geist にない字なので Zen Kaku Gothic New で組む。描画を止めずに読み込む -->
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"></noscript>
+<script>document.documentElement.classList.add("js");</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Koebumi","operatingSystem":"macOS 26","applicationCategory":"ProductivityApplication","description":"Fnキーを押して話すと、言いよどみを除いた文をカーソル位置に入力するmacOSの音声入力アプリ。Claude Code・Codexへの指示に対応。","offers":{"@type":"Offer","price":"0","priceCurrency":"JPY"},"license":"https://opensource.org/licenses/MIT","url":"https://koebumi.github.io/","downloadUrl":"https://github.com/koebumi/koebumi/releases/latest"}
+</script>
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"FAQPage","mainEntity":[
+{"@type":"Question","name":"本当に無料ですか？","acceptedAnswer":{"@type":"Answer","text":"はい。MIT Licenseのオープンソースで、アプリに料金はかかりません。ClaudeやOpenAI互換のエンジンを選んだときだけ、そのサービスの利用料がかかります。"}},
+{"@type":"Question","name":"APIキーがなくても使えますか？","acceptedAnswer":{"@type":"Answer","text":"使えます。既定では、Appleのオンデバイスモデルと音声認識を使います。このMacで動く音声認識モデル（5種類）も、キーなしで選べます。"}},
+{"@type":"Question","name":"どのMacで動きますか？","acceptedAnswer":{"@type":"Answer","text":"macOS 26以降の、AppleシリコンのMacです。Appleのオンデバイスモデルで整形するには、Apple Intelligenceをオンにしてください。WindowsやiPhoneの版はありません。"}},
+{"@type":"Question","name":"話した内容は、どこへ送られますか？","acceptedAnswer":{"@type":"Answer","text":"既定では送りません。音声認識も整形も、このMacの中で行います。ClaudeやOpenAI互換のエンジンを選んだときだけ、録音か書き起こした文を、選んだサービスに送ります。"}},
+{"@type":"Question","name":"「開けませんでした」と表示されて開けません","acceptedAnswer":{"@type":"Answer","text":"まだAppleの公証を受けていないためです。「完了」を押してから、システム設定のプライバシーとセキュリティを開き、「Koebumi」の「このまま開く」を押してください。必要なのは最初の1回だけです。"}},
+{"@type":"Question","name":"Codexでも使えますか？","acceptedAnswer":{"@type":"Answer","text":"使えます。整形、ファイル名の修正、スラッシュコマンド、「送信」でのEnterは、Codexでも動きます。許可の確認に声で答えられるのは、Claude Codeだけです。"}},
+{"@type":"Question","name":"tmuxやSSHの先のClaude Codeでも使えますか？","acceptedAnswer":{"@type":"Answer","text":"使えます。プロセスではなく画面の文字で見分けるので、tmuxやherdrの中、SSHの先でも動きます。ただし、tmuxで画面を左右に分けているときは、許可の確認には答えません。"}},
+{"@type":"Question","name":"ClaudeやChatGPTのサブスクで整形できますか？","acceptedAnswer":{"@type":"Answer","text":"できます。このMacのClaude CodeやCodexを起動して整形するので、それぞれと同じ利用枠を使います。Koebumiはログインのトークンに触れません。各社の規約や方針が変わると、使えなくなることがあります。"}},
+{"@type":"Question","name":"日本語以外でも使えますか？","acceptedAnswer":{"@type":"Answer","text":"使えます。このMacで動くモデルは、話した言語を自動で判定します。翻訳先を選べば、日本語で話して英語で入力することもできます。アプリの表示は日本語と英語です。"}},
+{"@type":"Question","name":"新しい版は、どう入れますか？","acceptedAnswer":{"@type":"Answer","text":"新しい版が出ると、Koebumiが知らせます。確認のために1日1回GitHubにアクセスします。設定の一般でオフにできます。"}}
+]}
+</script>
 <style>
-  /* 白い地に墨の文字。見出しは墨と灰の 2 色。見本は、アイコンの青緑とくちばしのオレンジを溶かした柔らかい地に置く。
+  /* 白い地に墨の文字。背景はどれも単色で、グラデーションはファーストビューの見出しの文字だけに使う。
      色の約束: オレンジ = 取り除く・直す言葉、青緑 = Koebumi が入力した言葉と、命令として受け取った言葉 */
   :root {
     --bg: #ffffff;
-    --bg-2: #f6f7f6;
-    --ink: #0f2328;
-    --ink-2: #4a5c60;
-    --mute: #5b6c70;
-    --gray: #7d8b8e;
-    --line: #e6eaea;
+    --surface: #f5f5f4;
+    --surface-2: #ececea;
+    --ink: #0a0a0a;
+    --ink-2: #404040;
+    --mute: #6b6b6b;
+    --line: #e5e5e3;
     --teal: #2b6772;
-    --teal-deep: #1b4851;
+    --teal-ink: #1b4851;
     --teal-soft: #dcecef;
     --orange: #fe6f47;
     --orange-soft: #ffe4da;
-    --card: #ffffff;
-    --display: "Zen Kaku Gothic New", "Hiragino Sans", "Hiragino Kaku Gothic ProN", sans-serif;
-    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
-    --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
-    --shadow: 0 1px 2px rgba(15, 35, 40, 0.05), 0 18px 48px rgba(15, 35, 40, 0.10);
-    color-scheme: light;
+    /* 暗い節の色は、スキルが決めた暗い背景色だけを使う */
+    --d-bg: #181818;
+    --d-1: #1f1f1f;
+    --d-2: #272727;
+    --d-3: #313131;
+    --d-mute: #9b9b9b;
+    --d-text: #d6d6d6;
+    --d-teal: #84cad5;
+    --sans: "Geist", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, "Zen Kaku Gothic New", monospace;
+    /* 余白はこの 13 段だけ */
+    --s-25: 2px; --s-50: 4px; --s-75: 8px; --s-100: 12px; --s-200: 16px; --s-300: 24px; --s-400: 32px;
+    --s-500: 40px; --s-600: 48px; --s-700: 64px; --s-800: 80px; --s-900: 96px;
+    /* 角丸は Tailwind の段だけ。入れ子の角丸は「外の角丸 − すき間」 */
+    --r-sm: 4px; --r-md: 6px; --r-lg: 8px; --r-xl: 12px; --r-2xl: 16px; --r-3xl: 24px; --r-full: 9999px;
+    /* 動き: --base はページの動き、--e・--e2・--io はカードと見本の動き */
+    --base: cubic-bezier(0.22, 1, 0.36, 1);
+    --e: cubic-bezier(0.16, 1, 0.3, 1);
+    --e2: cubic-bezier(0.33, 1, 0.68, 1);
+    --io: cubic-bezier(0.65, 0, 0.35, 1);
+    --shadow: 0 1px 2px rgba(10, 10, 10, 0.06), 0 16px 48px rgba(10, 10, 10, 0.1);
+    --shadow-sm: 0 1px 2px rgba(10, 10, 10, 0.06), 0 4px 16px rgba(10, 10, 10, 0.06);
   }
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; scroll-padding-top: 80px; }
+  html { -webkit-text-size-adjust: 100%; scroll-padding-top: var(--s-900); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
   html, body { margin: 0; }
-  body { background: var(--bg); color: var(--ink); font-family: var(--display); font-size: 16px; line-height: 1.8; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 24px; -webkit-font-smoothing: antialiased; text-autospace: normal; word-break: auto-phrase; overflow-wrap: anywhere; overflow-x: clip; }
+  h1, h2, h3, p, dl, dd, figure, ol, ul { margin: 0; }
+  ol, ul { padding: 0; list-style: none; }
   a { color: inherit; }
   img, video { max-width: 100%; display: block; }
-  ::selection { background: rgba(254, 111, 71, 0.22); }
-  :focus-visible { outline: 3px solid var(--orange); outline-offset: 3px; border-radius: 8px; }
-  .skip { position: absolute; left: 12px; top: -60px; z-index: 200; background: var(--ink); color: #fff; padding: 10px 16px; border-radius: 8px; text-decoration: none; }
-  .skip:focus { top: 12px; }
-  .shell { max-width: 1200px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
-  section { position: relative; }
-  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  button { font: inherit; color: inherit; }
+  code { font-family: var(--mono); }
+  ::selection { background: var(--orange-soft); color: var(--ink); }
+  :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .dark :focus-visible, .final :focus-visible { outline-color: var(--d-teal); }
+  .i { width: 20px; height: 20px; fill: currentColor; flex: none; }
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .skip { position: fixed; left: var(--s-200); top: var(--s-200); z-index: 200; transform: translateY(-200%); padding: var(--s-75) var(--s-100); border-radius: var(--r-lg); background: var(--ink); color: #fff; font-size: 14px; line-height: 20px; text-decoration: none; transition: transform 0.5s var(--base); }
+  .skip:focus { transform: none; }
+  .shell { width: 100%; max-width: 1264px; margin-inline: auto; padding-inline: var(--s-200); }
+  @media (min-width: 640px) { .shell { padding-inline: var(--s-300); } }
+  @media (min-width: 1024px) { .shell { padding-inline: var(--s-400); } }
 
-  /* 見出し: 墨と灰の 2 色 */
-  .h-xl { margin: 0; font-size: clamp(42px, 6.6vw, 96px); font-weight: 500; line-height: 1.12; letter-spacing: -0.025em; word-break: auto-phrase; text-wrap: balance; }
-  .h-lg { margin: 0; font-size: clamp(34px, 4.8vw, 68px); font-weight: 500; line-height: 1.15; letter-spacing: -0.02em; word-break: auto-phrase; text-wrap: balance; }
-  .h-md { margin: 0; font-size: clamp(22px, 2vw, 28px); font-weight: 700; line-height: 1.4; letter-spacing: -0.005em; word-break: auto-phrase; text-wrap: balance; }
-  .g { color: var(--gray); }
-  .lead { margin: 0; color: var(--mute); font-size: clamp(15.5px, 1.25vw, 18px); line-height: 1.85; word-break: auto-phrase; }
-  .center { text-align: center; }
-  .reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.9s var(--ease), transform 0.9s var(--ease); }
-  .reveal.in { opacity: 1; transform: none; }
-  .tag { display: inline-block; margin-bottom: 14px; font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; color: var(--teal); }
+  /* 日本語の改行: 見出しは <wbr> を置いた文節の切れ目でだけ折り返す */
+  .h1, .h2, .tl, h3 { word-break: keep-all; overflow-wrap: anywhere; text-wrap: balance; font-feature-settings: "palt"; }
+  p, li, dd, summary, .a, .b, .s, .o, .scr, .doc { text-wrap: pretty; }
+
+  /* 文字の段（大きさと行の高さは Tailwind の組のまま） */
+  .eyebrow { display: flex; align-items: center; gap: var(--s-100); font-family: var(--mono); font-size: 12px; line-height: 16px; letter-spacing: 0.1em; color: var(--mute); }
+  .eyebrow b { font-weight: 500; color: var(--teal); }
+  .dark .eyebrow { color: var(--d-mute); }
+  .dark .eyebrow b { color: var(--d-teal); }
+  .h1 { width: fit-content; max-width: 680px; font-size: 36px; line-height: 40px; font-weight: 500; letter-spacing: -0.025em; }
+  @media (min-width: 480px) { .h1 { font-size: 48px; line-height: 1; } }
+  @media (min-width: 768px) { .h1 { font-size: 60px; } }
+  @media (min-width: 1024px) { .h1 { font-size: 72px; } }
+  /* ファーストビューの見出しだけ、左から右へ墨から灰へ */
+  .grad { padding-bottom: var(--s-75); background-image: linear-gradient(90deg, #000000, #666666); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  /* ファーストビューの見出しは、話した言葉が書き起こされるように 1 字ずつ現れる */
+  .h1 .ch { opacity: 0; filter: blur(4px); transition: opacity 0.6s var(--e2) var(--cd), filter 0.6s var(--e2) var(--cd); }
+  .h1.typed .ch { opacity: 1; filter: none; }
+  .h2 { font-size: 36px; line-height: 40px; font-weight: 500; letter-spacing: -0.025em; }
+  @media (min-width: 768px) { .h2 { font-size: 48px; line-height: 1; } }
+  @media (min-width: 1024px) { .h2 { font-size: 60px; } }
+  .g { color: var(--mute); }
+  .dark .g { color: var(--d-mute); }
+  .lead { max-width: 680px; font-size: 16px; line-height: 24px; color: var(--ink-2); }
+  @media (min-width: 768px) { .lead { font-size: 18px; line-height: 28px; } }
+  .dark .lead { color: var(--d-text); }
 
   /* ボタン */
-  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 50px; padding: 0 26px; border-radius: 999px; background: var(--ink); color: #fff; text-decoration: none; font-weight: 700; font-size: 15px;
-         white-space: nowrap; transition: transform 0.3s var(--ease), background 0.3s; }
-  .btn:hover { transform: translateY(-2px); background: var(--teal-deep); }
-  .btn svg { width: 18px; height: 18px; flex: none; }
-  .btn-2 { display: inline-flex; align-items: center; gap: 8px; height: 50px; padding: 0 24px; border-radius: 999px; background: var(--bg-2); color: var(--ink); text-decoration: none; font-weight: 700; font-size: 15px; white-space: nowrap; transition: background 0.25s; }
-  .btn-2:hover { background: #ebeeed; }
-  .btn-2 svg { width: 18px; height: 18px; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--s-75); padding: var(--s-75) var(--s-100); border: 0; border-radius: var(--r-xl); background-color: var(--ink); color: #fff; font-size: 16px; line-height: 24px; font-weight: 600; text-decoration: none; white-space: nowrap; cursor: pointer; transition: transform 0.5s var(--base), background-color 0.3s var(--base); }
+  .btn:hover { background-color: #2a2a2a; transform: translateY(-2px); }
+  .btn:active { transform: scale(0.98); }
+  .btn .i { transition: transform 0.5s var(--base); }
+  .btn:hover .dl { transform: translateY(2px); }
+  .btn:hover .go { transform: translateX(4px); }
+  .btn-light { background-color: #ffffff; color: var(--ink); }
+  .btn-light:hover { background-color: var(--surface-2); }
+  .btn-ghost { background-color: var(--d-2); color: #fff; }
+  .btn-ghost:hover { background-color: var(--d-3); }
+  .btn-nav { font-size: 14px; line-height: 20px; border-radius: var(--r-lg); }
+  .btn-nav .i { width: 16px; height: 16px; }
 
-  /* ナビ */
-  .nav { position: sticky; top: 0; z-index: 50; background: rgba(255, 255, 255, 0.82); backdrop-filter: saturate(1.6) blur(16px); -webkit-backdrop-filter: saturate(1.6) blur(16px); transition: box-shadow 0.3s; }
-  .nav.scrolled { box-shadow: 0 1px 0 var(--line); }
-  .nav .shell { height: 68px; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
-  .logo { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 21px; letter-spacing: 0.01em; text-decoration: none; justify-self: start; }
-  .logo svg { width: 32px; height: 32px; }
-  .links { display: flex; gap: 30px; font-size: 14.5px; font-weight: 500; }
-  .links a { text-decoration: none; color: var(--ink-2); transition: color 0.2s; }
-  .links a:hover { color: var(--ink); }
-  .nav .btn { justify-self: end; height: 42px; padding: 0 20px; font-size: 14px; }
+  /* ナビ: 上の端から浮いた、中身の幅だけの帯 */
+  .nav { position: fixed; top: var(--s-200); left: 0; right: 0; z-index: 60; display: flex; justify-content: center; padding-inline: var(--s-200); pointer-events: none; }
+  .nav-bar { pointer-events: auto; display: flex; align-items: center; gap: var(--s-200); padding: var(--s-75); border: 1px solid rgba(10, 10, 10, 0.08); border-radius: var(--r-2xl); background-color: rgba(255, 255, 255, 0.72); box-shadow: 0 8px 32px rgba(10, 10, 10, 0.08); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6);
+             transition: background-color 0.3s var(--base), border-color 0.3s var(--base), color 0.3s var(--base); }
+  .logo { display: flex; align-items: center; gap: var(--s-75); padding-inline: var(--s-50); border-radius: var(--r-lg); font-size: 16px; line-height: 24px; font-weight: 700; text-decoration: none; }
+  .logo svg { width: 28px; height: 28px; }
+  .links { display: none; gap: var(--s-25); }
+  .links a { padding: var(--s-75) var(--s-100); border-radius: var(--r-lg); font-size: 14px; line-height: 20px; font-weight: 500; color: var(--ink-2); text-decoration: none; transition: background-color 0.3s var(--base), color 0.3s var(--base); }
+  .links a:hover { background-color: rgba(10, 10, 10, 0.05); color: var(--ink); }
+  .links a[aria-current="true"] { background-color: rgba(10, 10, 10, 0.07); color: var(--ink); }
+  .menu-btn { display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 0; border-radius: var(--r-lg); background-color: transparent; cursor: pointer; transition: background-color 0.3s var(--base); }
+  .menu-btn:hover { background-color: rgba(10, 10, 10, 0.05); }
+  .menu-btn span { grid-area: 1 / 1; width: 16px; height: 2px; border-radius: var(--r-full); background-color: currentColor; transition: transform 0.5s var(--base); }
+  .menu-btn span:first-child { transform: translateY(-4px); }
+  .menu-btn span:last-child { transform: translateY(4px); }
+  .menu-open .menu-btn span:first-child { transform: rotate(45deg); }
+  .menu-open .menu-btn span:last-child { transform: rotate(-45deg); }
+  @media (min-width: 900px) { .links { display: flex; } .menu-btn { display: none; } }
+  @media (max-width: 899px) { .nav-bar { gap: var(--s-75); } .logo { margin-right: var(--s-300); } }
+  /* 暗い節の上では、帯も暗くする */
+  .nav.dark .nav-bar { border-color: rgba(255, 255, 255, 0.1); background-color: rgba(24, 24, 24, 0.72); color: #fff; }
+  .nav.dark .links a { color: rgba(255, 255, 255, 0.72); }
+  .nav.dark .links a:hover, .nav.dark .links a[aria-current="true"] { background-color: rgba(255, 255, 255, 0.1); color: #fff; }
+  .nav.dark .btn-nav { background-color: #ffffff; color: var(--ink); }
+  .nav.dark .menu-btn:hover { background-color: rgba(255, 255, 255, 0.1); }
+  /* スマートフォンのメニュー: 画面いっぱいの板 */
+  .menu { position: fixed; inset: 0; z-index: 55; display: flex; flex-direction: column; justify-content: center; gap: var(--s-600); padding: var(--s-900) var(--s-300) var(--s-600); background-color: rgba(255, 255, 255, 0.92); -webkit-backdrop-filter: blur(32px); backdrop-filter: blur(32px); opacity: 0; visibility: hidden; transition: opacity 0.5s var(--base), visibility 0s var(--base) 0.5s; }
+  .menu-open .menu { opacity: 1; visibility: visible; transition: opacity 0.5s var(--base); }
+  .menu nav { display: flex; flex-direction: column; gap: var(--s-50); }
+  .menu nav a, .menu .btn { opacity: 0; transform: translateY(24px); transition: opacity 0.5s var(--base) var(--d, 0s), transform 0.5s var(--base) var(--d, 0s), background-color 0.3s var(--base); }
+  .menu nav a { padding-block: var(--s-75); font-size: 30px; line-height: 36px; font-weight: 500; text-decoration: none; }
+  .menu-open .menu nav a, .menu-open .menu .btn { opacity: 1; transform: none; }
 
-  /* ふわっとした地（アイコンの青緑とくちばしのオレンジ） */
-  .aura { position: relative; overflow: hidden; border-radius: clamp(20px, 2.4vw, 32px); background: #eef3f2; isolation: isolate; }
-  .aura::before { content: ""; position: absolute; inset: -30%; z-index: -2; filter: blur(48px) saturate(1.15);
-                  background: radial-gradient(40% 45% at 22% 30%, #bfe0e5, transparent 70%), radial-gradient(38% 40% at 80% 24%, #ffd9cb, transparent 70%),
-                              radial-gradient(45% 50% at 62% 88%, #d3ebe6, transparent 70%), radial-gradient(30% 35% at 40% 70%, #fff1e8, transparent 70%);
-                  animation: drift 18s ease-in-out infinite alternate; }
-  .aura.warm::before { background: radial-gradient(42% 46% at 75% 30%, #ffd2c1, transparent 70%), radial-gradient(40% 45% at 20% 75%, #c9e5ea, transparent 70%), radial-gradient(35% 40% at 50% 50%, #fff3ea, transparent 70%); }
-  .aura.cool::before { background: radial-gradient(45% 50% at 25% 25%, #b8dbe1, transparent 70%), radial-gradient(40% 45% at 85% 70%, #d7ece8, transparent 70%), radial-gradient(30% 35% at 60% 20%, #ffe6dc, transparent 70%); }
-  .aura::after { content: ""; position: absolute; inset: 0; z-index: -1; opacity: 0.08; mix-blend-mode: multiply; pointer-events: none;
-                 background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23n)'/></svg>"); }
-  @keyframes drift { 0% { transform: translate(0, 0) rotate(0deg); } 100% { transform: translate(4%, -3%) rotate(8deg); } }
+  /* 現れる要素（ページ）と、現れるカード（見本） */
+  .js .reveal { opacity: 0; transform: translateY(32px); transition: opacity 0.7s var(--base) var(--d, 0s), transform 0.7s var(--base) var(--d, 0s); }
+  .js .reveal.in { opacity: 1; transform: none; }
+  .js .card { opacity: 0; transform: translateY(24px) scale(0.985); filter: blur(6px); transition: transform 0.9s var(--e) var(--d, 0s), opacity 0.6s var(--e2) var(--d, 0s), filter 0.7s var(--e2) var(--d, 0s); }
+  .js .card.in { opacity: 1; transform: none; filter: none; }
+  .js .card .up { opacity: 0; transform: translateY(10px); filter: blur(4px); transition: transform 1.05s var(--e) calc(var(--d, 0s) + 0.15s), opacity 0.75s var(--e2) calc(var(--d, 0s) + 0.15s), filter 0.75s var(--e2) calc(var(--d, 0s) + 0.15s); }
+  .js .card.in .up { opacity: 1; transform: none; filter: none; }
+
+  /* 節 */
+  .sec { padding-block: var(--s-800); }
+  @media (min-width: 1024px) { .sec { padding-block: var(--s-900); } }
+  .sec + .sec:not(.dark):not(.band) { padding-top: 0; }
+  .sec-head { display: grid; gap: var(--s-300); max-width: 960px; }
+  .sec-head.mid { margin-inline: auto; justify-items: center; text-align: center; }
 
   /* 話した言葉の印 */
-  .mic-i { width: 30px; height: 30px; border-radius: 50%; background: #16171a; display: grid; place-items: center; flex: none; margin-top: 2px; }
-  .mic-i svg { width: 15px; height: 15px; }
-  .hl-f { background: var(--orange-soft); border-radius: 4px; padding: 0 2px; transition: color 0.4s; }
-  .hl-f.x { text-decoration: line-through; text-decoration-color: var(--orange); text-decoration-thickness: 2px; color: #8f9c9e; }
-  .hl-c { background: var(--teal-soft); color: var(--teal-deep); border-radius: 4px; padding: 0 3px; font-weight: 700; }
+  .mic { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--r-full); background-color: var(--ink); color: #fff; }
+  .mic .i { width: 16px; height: 16px; }
+  .lab { display: block; margin-bottom: var(--s-50); font-family: var(--mono); font-size: 12px; line-height: 16px; letter-spacing: 0.05em; color: var(--mute); }
+  .hf { position: relative; padding-inline: var(--s-25); border-radius: var(--r-sm); background-color: var(--orange-soft); transition: opacity 0.5s var(--base); }
+  .hf::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 2px; border-radius: var(--r-full); background-color: var(--orange); transform: translateY(-50%) scaleX(0); transform-origin: left center; transition: transform 0.5s var(--io); }
+  .hf.x { opacity: 0.55; }
+  .hf.x::after { transform: translateY(-50%) scaleX(1); }
+  .hk { position: relative; }
+  .hk::after { content: ""; position: absolute; left: 0; right: 0; bottom: -2px; height: 2px; border-radius: var(--r-full); background-color: var(--orange); transform: scaleX(0); transform-origin: left center; transition: transform 0.5s var(--io); }
+  .hk.x::after { transform: scaleX(1); }
+  .hc { border-radius: var(--r-sm); transition: background-color 0.3s var(--base), color 0.3s var(--base); }
+  .hc.x { padding-inline: var(--s-25); background-color: var(--teal-soft); color: var(--teal-ink); font-weight: 700; }
+  .fnm { padding-inline: var(--s-50); border-radius: var(--r-md); background-color: var(--teal-soft); color: var(--teal-ink); font-family: var(--mono); font-weight: 500; display: inline-block; }
+  .cmd { display: inline-block; padding: var(--s-25) var(--s-75); border-radius: var(--r-md); background-color: var(--teal-soft); color: var(--teal-ink); font-family: var(--mono); font-weight: 500; }
+  .ent { display: inline-block; margin-left: var(--s-75); padding: 0 var(--s-75); border: 1px solid var(--line); border-radius: var(--r-md); background-color: #ffffff; box-shadow: 0 2px 0 var(--line); font-family: var(--mono); font-size: 12px; line-height: 16px; font-weight: 500; color: var(--ink); vertical-align: middle; }
+  .new { border-radius: var(--r-sm); background-color: var(--teal-soft); color: var(--teal-ink); padding-inline: var(--s-25); }
 
   /* ターミナル（行ごとに組む。長い行は省略して、見本の高さを変えない） */
-  .term { width: min(560px, 100%); background: #12171a; border-radius: 18px; overflow: hidden; box-shadow: 0 30px 80px rgba(15, 35, 40, 0.28); text-align: left; }
-  .term .bar { height: 40px; display: flex; align-items: center; gap: 7px; padding: 0 14px; border-bottom: 1px solid #21292d; position: relative; }
-  .term .bar i { width: 11px; height: 11px; border-radius: 50%; background: #2c363b; display: block; }
-  .term .bar span { position: absolute; left: 0; right: 0; text-align: center; font-family: var(--mono); font-size: 12px; color: #7e8f94; pointer-events: none; }
-  .term .scr { padding: 18px 22px 22px; font-family: var(--mono); font-size: clamp(12px, 1.05vw, 14.5px); line-height: 1.85; color: #e9eff1; }
-  .term .ln { min-height: 1.85em; white-space: pre-wrap; word-break: break-word; }
-  .term .ln.cut { white-space: pre; overflow: hidden; text-overflow: ellipsis; }
-  .term .ln.box { border-top: 1px solid #2f3a3f; border-bottom: 1px solid #2f3a3f; padding: 3px 0; margin: 2px 0; }
-  .term .ln.rule { border-top: 1px solid #2f3a3f; padding-top: 4px; margin-top: 2px; }
-  .t-dim { color: #7e8f94; } .t-or { color: var(--orange); } .t-te { color: #84cad5; } .t-ok { color: #7fd1a1; }
-  .t-sel { background: rgba(254, 111, 71, 0.26); border-radius: 4px; }
-  .t-fn { background: rgba(132, 202, 213, 0.18); color: #bfe6ec; border-radius: 4px; }
-  .cur { display: inline-block; width: 0.6em; height: 1.15em; background: #84cad5; vertical-align: -0.22em; }
-  .enter { display: inline-block; font-size: 0.85em; line-height: 1.5; padding: 0 8px; border: 1px solid #3a474c; border-bottom-width: 3px; border-radius: 6px; color: #e9eff1; }
+  .term { width: min(800px, 100%); overflow: hidden; border: 1px solid var(--d-3); border-radius: var(--r-2xl); background-color: var(--d-bg); color: #f2f2f2; text-align: left; box-shadow: 0 32px 80px rgba(10, 10, 10, 0.22); }
+  .term .bar { position: relative; display: flex; align-items: center; gap: var(--s-75); height: 40px; padding-inline: var(--s-200); background-color: var(--d-1); }
+  .term .bar i { width: 12px; height: 12px; border-radius: var(--r-full); background-color: var(--d-3); }
+  .term .bar span { position: absolute; inset: 0; display: grid; place-items: center; font-family: var(--mono); font-size: 12px; line-height: 16px; color: var(--d-mute); pointer-events: none; }
+  .term .scr { padding: var(--s-300) var(--s-200); font-family: var(--mono); font-size: 12px; line-height: 16px; }
+  @media (min-width: 640px) { .term .scr { padding: var(--s-300); font-size: 14px; line-height: 20px; } }
+  .term .ln { min-height: 16px; white-space: pre-wrap; word-break: break-word; }
+  @media (min-width: 640px) { .term .ln { min-height: 20px; } }
+  .term .ln.cut { overflow: hidden; white-space: pre; text-overflow: ellipsis; }
+  .term .ln.box, .term .ln.rule { position: relative; padding-block: var(--s-50); }
+  .term .ln.box::before, .term .ln.box::after, .term .ln.rule::before { content: ""; position: absolute; left: 0; right: 0; height: 1px; background-color: #3a3a3a; }
+  .term .ln.box::before, .term .ln.rule::before { top: 0; }
+  .term .ln.box::after { bottom: 0; }
+  .t-dim { color: #8a8a8a; } .t-or { color: var(--orange); } .t-te { color: var(--d-teal); } .t-ok { color: #7fd1a1; }
+  .t-sel { border-radius: var(--r-sm); background-color: rgba(254, 111, 71, 0.26); }
+  .t-fn { border-radius: var(--r-sm); background-color: rgba(132, 202, 213, 0.18); color: #bfe6ec; }
+  .cur { display: inline-block; width: 0.6em; height: 1.1em; vertical-align: -0.2em; background-color: var(--d-teal); }
+  .enter { display: inline-block; padding: 0 var(--s-75); border: 1px solid #4a4a4a; border-radius: var(--r-md); box-shadow: 0 2px 0 #4a4a4a; color: #f2f2f2; }
 
   /* 1. ファーストビュー */
-  .hero { padding-block: clamp(40px, 6vh, 80px) 0; }
-  .badge { display: inline-flex; align-items: center; gap: 10px; height: 34px; padding: 0 14px 0 6px; border-radius: 999px; background: var(--bg-2); font-size: 13.5px; font-weight: 500; color: var(--ink-2); text-decoration: none; }
-  .badge img { width: 24px; height: 24px; border-radius: 7px; }
-  .hero .h-xl { margin-top: 22px; font-size: clamp(42px, 6vw, 88px); }
-  .hero .lead { margin: 24px auto 0; max-width: 36em; text-wrap: balance; }
-  .hero .cta { margin-top: 34px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .hero .meta { margin-top: 16px; font-family: var(--mono); font-size: 12.5px; color: var(--mute); }
-  .stage { margin-top: clamp(36px, 5vh, 60px); padding: clamp(20px, 3vw, 34px) clamp(12px, 3vw, 40px) clamp(22px, 3vw, 34px); display: flex; flex-direction: column; align-items: center; }
-  .said-zone { position: relative; z-index: 3; width: min(780px, 100%); min-height: 104px; display: flex; align-items: flex-end; justify-content: flex-start; padding-left: clamp(0px, 3vw, 36px); margin-bottom: -22px; }
-  .said-card { display: flex; gap: 12px; align-items: flex-start; max-width: min(560px, 100%); padding: 14px 18px; border-radius: 16px; background: rgba(255, 255, 255, 0.94); box-shadow: var(--shadow); font-size: clamp(14px, 1.3vw, 16.5px); line-height: 1.6; color: var(--ink-2); text-align: left; }
-  .said-card .lab { display: block; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; color: var(--mute); margin-bottom: 2px; }
-  .hero-t { width: min(780px, 100%); }
-  .hero-t .bar span { text-align: right; padding-right: 18px; }
-  .hero-t .scr { min-height: calc(14 * 1.85em + 40px); padding-top: 30px; transition: opacity 0.4s; }
-  .vbar { margin-top: 18px; width: 150px; height: 52px; border-radius: 26px; background: rgba(255, 255, 255, 0.86);
-          box-shadow: 0 12px 34px rgba(15, 35, 40, 0.14), inset 0 1px 0 #fff; display: flex; align-items: center; gap: 14px; padding-left: 9px; }
-  .vbar .mic-i { width: 34px; height: 34px; margin: 0; }
-  .vbar .bars { position: relative; width: 80px; height: 52px; }
-  .vbar .bars i { position: absolute; top: 50%; width: 2.5px; border-radius: 2px; background: #0b0d12; }
-  .fn { position: absolute; left: 4%; bottom: 9%; width: 76px; height: 62px; border-radius: 16px; background: linear-gradient(#fff, #eef1f1); display: grid; place-items: center; font-weight: 900; font-size: 24px;
-        box-shadow: 0 7px 0 #d4dbdc, 0 18px 40px rgba(15, 35, 40, 0.14); }
-  .facts { margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-  .fact { background: var(--bg-2); border-radius: 22px; padding: 22px 26px 24px; min-width: 0; }
-  .fact .k { font-size: 13.5px; color: var(--mute); font-weight: 500; }
-  .fact .v { margin-top: 4px; font-size: clamp(30px, 3.4vw, 46px); font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; }
-  .fact .v small { font-size: 0.42em; font-weight: 500; color: var(--mute); margin-left: 6px; letter-spacing: 0; }
+  .hero { padding-top: var(--s-900); }
+  .hero-in { padding-top: var(--s-600); }
+  /* 見出しと説明、数字とボタンを、それぞれ同じ行にそろえる */
+  .hero-grid { display: grid; grid-template-areas: "eye" "h1" "lead" "cta" "stats"; gap: var(--s-300); }
+  .h-eye { grid-area: eye; } .hero .h1 { grid-area: h1; } .h-lead { grid-area: lead; } .h-cta { grid-area: cta; } .h-stats { grid-area: stats; }
+  @media (max-width: 1023px) { .h-stats { margin-top: var(--s-200); } }
+  @media (min-width: 1024px) { .hero-grid { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); grid-template-areas: "eye eye" "h1 lead" "stats cta"; gap: var(--s-400) var(--s-600); align-items: end; } .h-eye { margin-bottom: calc(var(--s-75) * -1); } .h-lead { padding-bottom: var(--s-75); } }
+  .hero .eyebrow img { width: 20px; height: 20px; border-radius: var(--r-sm); }
+  .fine { font-size: 14px; line-height: 20px; color: var(--mute); }
+  .nw { white-space: nowrap; }
+  .fine a { text-decoration-color: rgba(10, 10, 10, 0.25); text-underline-offset: 4px; transition: color 0.3s var(--base), text-decoration-color 0.3s var(--base); }
+  .fine a:hover { color: var(--ink); text-decoration-color: var(--ink); }
+  .cta-col { display: grid; gap: var(--s-200); justify-items: start; }
+  @media (max-width: 639px) { .cta-col, .cta-col .btn { width: 100%; justify-items: stretch; } }
+  .stage { position: relative; isolation: isolate; display: flex; flex-direction: column; align-items: center; margin-top: var(--s-600); padding: var(--s-600) var(--s-200) var(--s-400); overflow: hidden; border-radius: var(--r-3xl); background-color: var(--surface); }
+  @media (min-width: 768px) { .stage { margin-top: var(--s-700); padding: var(--s-600); } }
+  .wave { position: absolute; inset: 0; z-index: -1; display: flex; align-items: center; justify-content: center; gap: var(--s-75); }
+  .wave i { flex: none; width: 4px; height: 360px; border-radius: var(--r-full); background-color: var(--surface-2); transform: scaleY(0.05); }
+  .said-zone { position: relative; z-index: 3; display: flex; align-items: flex-end; width: min(800px, 100%); min-height: 120px; margin-bottom: calc(var(--s-300) * -1); }
+  @media (min-width: 768px) { .said-zone { padding-left: var(--s-400); } }
+  .said { display: flex; align-items: flex-start; gap: var(--s-100); max-width: min(560px, 100%); padding: var(--s-200) var(--s-300) var(--s-200) var(--s-200); border-radius: var(--r-2xl); background-color: rgba(255, 255, 255, 0.96); box-shadow: var(--shadow); color: var(--ink-2); }
+  .hero-t .bar span { justify-items: end; padding-right: var(--s-200); }
+  .said .caret { display: inline-block; width: 2px; height: 20px; vertical-align: middle; background-color: var(--teal); }
+  .hero-t .scr { min-height: 312px; }
+  @media (min-width: 640px) { .hero-t .scr { min-height: 336px; } }
+  .vbar { display: flex; align-items: center; gap: var(--s-100); height: 48px; margin-top: var(--s-300); padding: var(--s-75) var(--s-200) var(--s-75) var(--s-75); border-radius: var(--r-full); background-color: #ffffff; box-shadow: 0 8px 24px rgba(10, 10, 10, 0.12); }
+  .bars { display: flex; align-items: center; gap: var(--s-50); height: 32px; }
+  .bars i { width: 3px; height: 24px; border-radius: var(--r-full); background-color: var(--ink); transform: scaleY(0.16); }
+  .key { position: relative; width: 72px; height: 64px; border-radius: var(--r-2xl); background-color: #d6d6d3; }
+  .key b { position: absolute; left: 0; right: 0; top: 0; display: grid; place-items: center; height: 56px; border: 1px solid var(--line); border-radius: var(--r-2xl); background-color: #ffffff; font-size: 24px; line-height: 32px; font-weight: 700; }
+  .key::after { content: ""; position: absolute; inset: 0; border-radius: var(--r-2xl); box-shadow: 0 0 0 8px rgba(254, 111, 71, 0.22); opacity: 0; transition: opacity 0.3s var(--base); }
+  .key.on::after { opacity: 1; }
+  .hero .key { position: absolute; left: var(--s-600); bottom: var(--s-600); display: none; }
+  @media (min-width: 1100px) { .hero .key { display: block; } }
+  .key-btn { padding: 0; border: 0; font: inherit; color: var(--ink); cursor: pointer; }
+  .key-btn b { transition: transform 0.3s var(--base); }
+  .key-btn:hover b { transform: translateY(2px); }
+  .key-btn:active b { transform: translateY(8px); }
+  .key-tip { position: absolute; left: 0; right: 0; top: 100%; margin-top: var(--s-100); font-family: var(--mono); font-size: 12px; line-height: 16px; color: var(--mute); text-align: center; white-space: nowrap; opacity: 0; transform: translateY(-4px); transition: opacity 0.3s var(--base), transform 0.5s var(--base); }
+  .key-btn:hover .key-tip, .key-btn:focus-visible .key-tip { opacity: 1; transform: none; }
+  .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-200); width: 100%; max-width: 480px; }
+  .stats > div { display: flex; flex-direction: column-reverse; gap: var(--s-25); }
+  .stats dt { font-size: 12px; line-height: 16px; color: var(--mute); }
+  .stats dd { font-size: 20px; line-height: 28px; font-weight: 600; letter-spacing: -0.025em; white-space: nowrap; }
+  @media (min-width: 640px) { .stats dd { font-size: 24px; line-height: 32px; } }
+  .stats dd small { margin-left: var(--s-25); font-size: 12px; line-height: 16px; font-weight: 500; letter-spacing: 0; color: var(--mute); }
+  @media (min-width: 640px) { .stats dd small { font-size: 14px; line-height: 20px; } }
 
-  /* 左に説明、右に見本 */
-  .rows { margin-top: clamp(56px, 9vh, 96px); display: flex; flex-direction: column; gap: clamp(56px, 9vh, 110px); }
-  .row { display: grid; grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); gap: clamp(28px, 5vw, 72px); align-items: center; }
-  .row .t .lead { margin-top: 12px; font-size: 15.5px; }
-  .demo { min-height: clamp(300px, 30vw, 380px); display: grid; place-items: center; padding: clamp(24px, 4vw, 48px) clamp(16px, 3vw, 40px); }
-  .pair { position: relative; width: min(520px, 100%); }
-  .pair .a { position: relative; z-index: 2; display: flex; gap: 12px; padding: 16px 18px; border-radius: 16px; background: #fff; box-shadow: var(--shadow); font-size: clamp(14px, 1.25vw, 16px); line-height: 1.65; color: var(--ink-2); }
-  .pair .b { position: relative; z-index: 1; margin: -10px 0 0 clamp(16px, 4vw, 44px); padding: 26px 22px 20px; border-radius: 16px; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(8px);
-             font-size: clamp(16px, 1.6vw, 21px); font-weight: 700; line-height: 1.6; box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05);
-             opacity: 0; transform: translateY(14px); transition: opacity 0.7s var(--ease) 0.5s, transform 0.7s var(--ease) 0.5s; }
-  .pair .b .lab { display: block; font-family: var(--mono); font-size: 11px; font-weight: 500; letter-spacing: 0.08em; color: var(--teal); margin-bottom: 4px; }
-  .pair .b ol { margin: 4px 0 0; padding-left: 1.3em; }
-  .x { background: var(--orange-soft); border-radius: 4px; padding: 0 2px; text-decoration-line: line-through; text-decoration-color: transparent; text-decoration-thickness: 2px; transition: text-decoration-color 0.4s 0.2s, color 0.4s 0.2s; }
-  .in .x { text-decoration-color: var(--orange); color: #66787b; }
-  .in .pair .b { opacity: 1; transform: none; }
-  .new { background: linear-gradient(transparent 58%, var(--teal-soft) 58%); }
-  .fnm { font-family: var(--mono); font-weight: 500; font-size: 0.92em; background: var(--teal-soft); color: var(--teal-deep); border-radius: 5px; padding: 1px 5px; }
-  .ent { display: inline-block; font-family: var(--mono); font-size: 0.68em; font-weight: 500; vertical-align: 0.15em; margin-left: 6px; padding: 1px 8px; border: 1px solid #cdd6d7; border-bottom-width: 3px; border-radius: 7px; background: #fff; color: var(--ink); }
+  /* 2. 話したまま と 入力されるもの */
+  .cmp { display: grid; gap: var(--s-200); margin-top: var(--s-600); }
+  @media (min-width: 900px) { .cmp { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: stretch; margin-top: var(--s-700); } }
+  .cmp-col { min-height: 208px; padding: var(--s-300); border-radius: var(--r-3xl); }
+  @media (min-width: 768px) { .cmp-col { padding: var(--s-400); } }
+  .cmp-col.raw { background-color: var(--surface); }
+  .cmp-col.out { border: 1px solid var(--line); background-color: #ffffff; box-shadow: var(--shadow); }
+  .cmp-col.out .lab { color: var(--teal); }
+  .cmp-col p { margin-top: var(--s-200); font-size: 18px; line-height: 28px; }
+  @media (min-width: 768px) { .cmp-col p { font-size: 24px; line-height: 32px; } }
+  .cmp-col.raw p { color: var(--ink-2); }
+  .cmp-col.out p { font-weight: 600; }
+  .cmp-col .ent { margin-left: var(--s-100); }
+  .cmp-arrow { display: grid; place-items: center; color: var(--mute); }
+  .cmp-arrow .i { transform: rotate(90deg); }
+  @media (min-width: 900px) { .cmp-arrow .i { transform: none; } }
+  .dots { display: flex; justify-content: center; gap: var(--s-75); margin-top: var(--s-300); }
+  .dots i { position: relative; width: 32px; height: 4px; overflow: hidden; border-radius: var(--r-full); background-color: var(--line); }
+  .dots i b { position: absolute; inset: 0; background-color: var(--ink); transform: scaleX(0); transform-origin: left center; }
 
-  /* 2. Claude Code・Codex */
-  .agent { padding-block: clamp(110px, 16vh, 180px) 0; }
-  .agent .head { max-width: 46em; margin: 0 auto; }
-  .agent .head .lead { margin: 22px auto 0; max-width: 36em; }
-  .permw { position: relative; width: min(520px, 100%); padding-top: 22px; }
-  .said-chip { position: absolute; right: -6px; top: 0; z-index: 2; display: flex; gap: 10px; align-items: center; padding: 8px 18px 8px 8px; border-radius: 999px; background: #fff; box-shadow: var(--shadow); font-weight: 700; font-size: 15px; }
-  .said-chip .mic-i { width: 28px; height: 28px; margin: 0; }
-  .mini-t { width: 100%; }
-  .mini-t .scr { font-size: clamp(11.5px, 0.95vw, 13px); padding: 16px 18px 18px; }
-  .slash { width: min(500px, 100%); display: grid; gap: 10px; }
-  .sl { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: #fff; border-radius: 14px; box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05); font-size: 14.5px; color: var(--ink-2);
-        opacity: 0; transform: translateY(10px); transition: opacity 0.6s var(--ease), transform 0.6s var(--ease); }
-  .sl .ar { margin-left: auto; color: var(--orange); }
-  .sl code { font-family: var(--mono); font-size: 14px; font-weight: 500; color: var(--teal-deep); background: var(--teal-soft); border-radius: 6px; padding: 2px 9px; white-space: nowrap; }
-  .sl em { font-style: normal; font-size: 11.5px; color: var(--mute); background: var(--bg-2); border-radius: 6px; padding: 1px 7px; white-space: nowrap; }
-  .in .sl { opacity: 1; transform: none; }
-  .in .sl:nth-child(2) { transition-delay: 0.12s; } .in .sl:nth-child(3) { transition-delay: 0.24s; } .in .sl:nth-child(4) { transition-delay: 0.36s; }
-  .fnames { width: min(520px, 100%); display: grid; gap: 12px; }
-  .fx { background: #fff; border-radius: 16px; padding: 14px 18px; box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05); }
-  .fx .s { display: block; font-size: 13.5px; color: var(--mute); }
-  .fx .o { display: block; margin-top: 4px; font-size: clamp(15px, 1.35vw, 17px); font-weight: 700; }
-  .notes3 { margin-top: clamp(56px, 9vh, 96px); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-  .note { background: var(--bg-2); border-radius: 22px; padding: 24px 26px; min-width: 0; }
-  .note h3 { margin: 0; font-size: 18px; font-weight: 700; word-break: auto-phrase; }
-  .note p { margin: 8px 0 0; font-size: 14.5px; color: var(--mute); line-height: 1.8; word-break: auto-phrase; }
-
-  /* 3. 普段の文章 */
-  .polish { padding-block: clamp(120px, 18vh, 200px) 0; }
-  .polish .head .lead { margin: 22px auto 0; max-width: 34em; }
-  .strip { margin-top: 40px; padding: 22px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-  .chip { display: inline-flex; align-items: center; gap: 10px; height: 56px; padding: 0 20px 0 12px; border-radius: 16px; background: rgba(255, 255, 255, 0.9); box-shadow: 0 1px 2px rgba(15, 35, 40, 0.06); font-weight: 700; font-size: 15px; }
-  .chip .ic { width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center; background: var(--teal-soft); color: var(--teal); }
-  .chip .ic svg { width: 19px; height: 19px; }
-  .exs { margin-top: 18px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-  .ex { min-width: 0; display: flex; flex-direction: column; }
-  .ex .demo { min-height: 330px; padding: 26px 16px; }
-  .ex .pair .a { font-size: 14px; }
-  .ex .pair .b { font-size: 16.5px; margin-left: 18px; }
-  .ex .tag { margin: 20px 0 6px; }
-  .ex h3 { margin: 0; font-size: 20px; font-weight: 700; word-break: auto-phrase; }
-  .ex p { margin: 6px 0 0; color: var(--mute); font-size: 14.5px; line-height: 1.8; word-break: auto-phrase; }
-
-  /* 4. タイル */
-  .bento { padding-block: clamp(120px, 18vh, 200px) 0; }
-  .tiles { margin-top: clamp(44px, 7vh, 72px); display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px; }
-  .tile { background: var(--bg-2); border-radius: 26px; padding: 28px; min-width: 0; display: flex; flex-direction: column; gap: 14px; overflow: hidden; }
-  .tile.w3 { grid-column: span 3; } .tile.w2 { grid-column: span 2; }
-  .tile .vis { flex: 1; min-height: 170px; display: grid; place-items: center; border-radius: 18px; padding: 18px; }
-  .tile h3 { margin: 0; font-size: 20px; font-weight: 700; word-break: auto-phrase; }
-  .tile p { margin: 0; color: var(--mute); font-size: 14.5px; line-height: 1.8; word-break: auto-phrase; }
-  .mini { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 360px; }
-  .mini .m { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 12px 14px; background: #fff; border-radius: 12px; font-size: 14px; box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05); }
-  .mini .m span:first-child { font-family: var(--mono); font-size: 11.5px; color: var(--mute); letter-spacing: 0.06em; flex: none; }
-  .mini .m b { font-weight: 700; text-align: right; }
-  .bub { display: inline-block; background: var(--teal); color: #fff; padding: 4px 12px; border-radius: 14px 14px 4px 14px; font-weight: 700; }
-  .dict { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 330px; }
-  .dict div { display: flex; align-items: center; gap: 10px; background: #fff; border-radius: 12px; padding: 10px 14px; font-size: 14px; box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05); }
-  .dict s { text-decoration-color: var(--orange); color: var(--mute); }
-  .dict s, .dict b, .dict em { white-space: nowrap; }
-  .dict em { font-style: normal; margin-left: auto; font-family: var(--mono); font-size: 11px; color: var(--teal); background: var(--teal-soft); border-radius: 6px; padding: 1px 7px; }
-  .ring { width: 130px; height: 130px; position: relative; display: grid; place-items: center; }
-  .ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
-  .ring b { font-size: 30px; font-weight: 700; } .ring small { display: block; font-size: 12px; color: var(--mute); font-weight: 500; text-align: center; }
-  .langs { display: flex; flex-wrap: wrap; gap: 10px; justify-content: center; max-width: 320px; }
-  .langs span { background: #fff; border-radius: 999px; padding: 6px 14px; font-weight: 700; font-size: 15px; box-shadow: 0 1px 2px rgba(15, 35, 40, 0.06); }
-  .langs span:nth-child(3n) { transform: rotate(-4deg); } .langs span:nth-child(4n) { transform: rotate(5deg); }
-  .ctx { width: 100%; max-width: 520px; display: grid; gap: 10px; }
-  .ctx .scr { background: #fff; border-radius: 12px; padding: 12px 16px; font-size: 14px; color: var(--ink-2); box-shadow: 0 1px 2px rgba(15, 35, 40, 0.05); }
-  .ctx .scr b { background: var(--teal-soft); border-radius: 4px; padding: 0 3px; color: var(--ink); }
-  .ctx .res { display: flex; align-items: center; gap: 12px; font-size: 16px; font-weight: 700; justify-content: center; }
-  .ctx .res s { text-decoration-color: var(--orange); color: var(--mute); font-weight: 500; }
-  .kbd { display: inline-flex; gap: 6px; align-items: center; }
-  .kbd kbd { font-family: var(--display); font-size: 13px; font-weight: 700; min-width: 30px; height: 30px; padding: 0 9px; display: grid; place-items: center; border-radius: 8px; background: #fff; box-shadow: 0 2px 0 #d9dfe0, 0 0 0 1px #e3e8e8; }
-  .ask { width: min(520px, 100%); display: grid; gap: 12px; }
-  .ask .doc { background: #fff; border-radius: 16px; padding: 18px 20px; box-shadow: var(--shadow); font-size: 15px; line-height: 1.9; color: var(--ink-2); }
-  .ask .doc mark { background: #cfe5ea; color: var(--ink); border-radius: 3px; padding: 1px 2px; }
-  .ask .cmd { justify-self: end; display: flex; gap: 10px; align-items: center; background: #16171a; color: #fff; border-radius: 999px; padding: 8px 18px 8px 8px; font-size: 14px; font-weight: 700; }
-  .ask .cmd .mic-i { background: #fff; width: 28px; height: 28px; margin: 0; }
-
-  /* 5. 動画（Claude Code の節の動画も、同じ枠を使う） */
-  .film { padding-block: clamp(120px, 18vh, 200px) 0; }
-  .frame { margin-top: 44px; position: relative; border-radius: clamp(18px, 2.2vw, 30px); overflow: hidden; aspect-ratio: 16 / 9; background: #f2f4f3; box-shadow: var(--shadow); }
+  /* 3. Claude Code・Codex（暗い節） */
+  .dark { background-color: var(--d-bg); color: #ffffff; }
+  .feats { display: grid; gap: var(--s-800); margin-top: var(--s-700); }
+  @media (min-width: 1024px) { .feats { gap: var(--s-900); margin-top: var(--s-900); } }
+  .feat { display: grid; gap: var(--s-300); align-items: center; }
+  @media (min-width: 1024px) { .feat { grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: var(--s-700); } .feat:nth-child(even) { grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); } .feat:nth-child(even) .feat-t { order: 2; } }
+  .num { font-family: var(--mono); font-size: 12px; line-height: 16px; letter-spacing: 0.1em; color: var(--d-teal); }
+  .feat h3 { margin-top: var(--s-100); font-size: 24px; line-height: 32px; font-weight: 700; }
+  @media (min-width: 1024px) { .feat h3 { font-size: 30px; line-height: 36px; } }
+  .feat p { margin-top: var(--s-200); color: var(--d-text); }
+  .feat p code { padding: 0 var(--s-50); border-radius: var(--r-sm); background-color: var(--d-2); color: #f2f2f2; }
+  .panel { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; min-height: 280px; padding: var(--s-400) var(--s-300); overflow: hidden; border: 1px solid var(--d-2); border-radius: var(--r-3xl); background-color: var(--d-1); }
+  @media (min-width: 768px) { .panel { min-height: 360px; padding: var(--s-600) var(--s-500); } }
+  .permw { position: relative; width: min(520px, 100%); padding-top: var(--s-300); }
+  .chip-said { position: absolute; right: 0; top: 0; z-index: 2; display: flex; align-items: center; gap: var(--s-75); padding: var(--s-50) var(--s-200) var(--s-50) var(--s-50); border-radius: var(--r-full); background-color: #ffffff; box-shadow: var(--shadow); color: var(--ink); font-size: 16px; line-height: 24px; font-weight: 700; }
+  .chip-said .mic { width: 28px; height: 28px; }
+  .mini-t { box-shadow: none; }
+  .slash { display: grid; gap: var(--s-75); width: min(520px, 100%); }
+  .sl { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-50) var(--s-100); padding: var(--s-100) var(--s-200); border-radius: var(--r-lg); background-color: var(--d-2); font-size: 14px; line-height: 20px; color: var(--d-text); transition: background-color 0.3s var(--base); }
+  .sl.on { background-color: var(--d-3); }
+  .sl .ar { display: flex; margin-left: auto; color: var(--orange); }
+  .sl .ar .i { width: 16px; height: 16px; }
+  .sl code { padding: var(--s-25) var(--s-75); border-radius: var(--r-md); background-color: rgba(132, 202, 213, 0.14); color: var(--d-teal); font-size: 14px; line-height: 20px; font-weight: 500; }
+  .sl em { order: 9; padding: 0 var(--s-75); border-radius: var(--r-md); background-color: var(--d-1); font-style: normal; font-size: 12px; line-height: 16px; color: var(--d-mute); }
+  .fnames { display: grid; gap: var(--s-100); width: min(520px, 100%); }
+  .fx { padding: var(--s-100) var(--s-200); border-radius: var(--r-lg); background-color: var(--d-2); }
+  .fx .s { display: block; font-size: 14px; line-height: 20px; color: var(--d-mute); }
+  .fx .o { display: block; margin-top: var(--s-50); font-size: 16px; line-height: 24px; font-weight: 700; }
+  .fx .fnm { background-color: rgba(132, 202, 213, 0.16); color: var(--d-teal); }
+  .fx .hf { background-color: rgba(254, 111, 71, 0.2); }
+  .notes { display: grid; gap: var(--s-200); margin-top: var(--s-800); }
+  @media (min-width: 900px) { .notes { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: var(--s-900); } }
+  .note { padding: var(--s-300); border: 1px solid var(--d-2); border-radius: var(--r-3xl); background-color: var(--d-1); }
+  .note .i { width: 24px; height: 24px; color: var(--d-teal); }
+  .note h3 { margin-top: var(--s-200); font-size: 18px; line-height: 28px; font-weight: 700; }
+  .note p { margin-top: var(--s-75); font-size: 14px; line-height: 20px; color: var(--d-text); }
+  .frame { position: relative; margin-top: var(--s-200); overflow: hidden; aspect-ratio: 16 / 9; border-radius: var(--r-3xl); background-color: var(--surface); }
+  .dark .frame { border: 1px solid var(--d-2); background-color: var(--d-1); }
   .frame video { width: 100%; height: 100%; object-fit: cover; }
-  .sound { position: absolute; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 16px; border-radius: 999px; border: 0; cursor: pointer;
-           background: rgba(255, 255, 255, 0.92); color: var(--ink); font: 700 13.5px var(--display); box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14); }
-  .sound svg { width: 17px; height: 17px; }
+  .sound { position: absolute; right: var(--s-200); bottom: var(--s-200); display: inline-flex; align-items: center; gap: var(--s-75); padding: var(--s-75) var(--s-100); border: 0; border-radius: var(--r-xl); background-color: rgba(255, 255, 255, 0.92); box-shadow: var(--shadow-sm); color: var(--ink); font-size: 14px; line-height: 20px; font-weight: 600; cursor: pointer; transition: transform 0.5s var(--base), background-color 0.3s var(--base); }
+  .sound:hover { background-color: #ffffff; transform: translateY(-2px); }
+  .sound:active { transform: scale(0.98); }
+  .sound .i { width: 16px; height: 16px; }
+  .film-cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: var(--s-100); margin-top: var(--s-800); align-items: end; }
+  @media (min-width: 1024px) { .film-cap { margin-top: var(--s-900); } }
+  .film-cap h3 { font-size: 24px; line-height: 32px; font-weight: 700; }
+  .film-cap p { font-size: 14px; line-height: 20px; color: var(--d-mute); }
 
-  /* 6. プライバシー */
-  .private { padding-block: clamp(120px, 18vh, 200px) 0; }
-  .private .panel { margin-top: clamp(44px, 7vh, 72px); padding: clamp(28px, 5vw, 64px); display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(22px, 3vw, 40px) clamp(24px, 4vw, 56px); }
-  .pv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 16px; align-items: start; background: rgba(255, 255, 255, 0.72); backdrop-filter: blur(10px); border-radius: 18px; padding: 22px; }
-  .pv .ic { width: 42px; height: 42px; border-radius: 12px; background: #fff; display: grid; place-items: center; color: var(--teal); box-shadow: 0 1px 2px rgba(15, 35, 40, 0.06); }
-  .pv .ic svg { width: 22px; height: 22px; }
-  .pv h3 { margin: 0; font-size: 18px; font-weight: 700; word-break: auto-phrase; }
-  .pv p { margin: 6px 0 0; font-size: 14.5px; color: var(--ink-2); line-height: 1.8; word-break: auto-phrase; }
-
-  /* 7. ショートカット */
-  .keys { padding-block: clamp(120px, 18vh, 200px) 0; }
-  .kgrid { margin-top: clamp(40px, 6vh, 64px); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
-  .kc { background: var(--bg-2); border-radius: 22px; padding: 26px 24px; min-width: 0; }
-  .kc .kbd { margin-bottom: 14px; }
-  .kc .kbd kbd { height: 40px; min-width: 40px; font-size: 15px; }
-  .kc h3 { margin: 6px 0 0; font-size: 18px; font-weight: 700; }
-  .kc p { margin: 6px 0 0; font-size: 14px; color: var(--mute); line-height: 1.75; word-break: auto-phrase; }
-
-  /* 8. 入れ方 */
-  .install { padding-block: clamp(120px, 18vh, 200px) 0; }
-  .steps { margin: clamp(40px, 6vh, 64px) 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; counter-reset: s; }
-  .steps li { counter-increment: s; border-top: 2px solid var(--ink); padding-top: 22px; min-width: 0; }
-  .steps li::before { content: counter(s); font-family: var(--mono); font-size: 13px; color: var(--orange); }
-  .steps h3 { margin: 10px 0 8px; font-size: 20px; font-weight: 700; line-height: 1.4; word-break: auto-phrase; }
-  .steps p { margin: 0; font-size: 14.5px; color: var(--ink-2); line-height: 1.85; word-break: auto-phrase; }
-  .steps code { font-family: var(--mono); font-size: 13px; background: var(--bg-2); padding: 2px 6px; border-radius: 6px; }
-  .req { margin-top: 26px; display: flex; flex-wrap: wrap; gap: 8px; }
-  .req span { font-size: 13px; color: var(--ink-2); background: var(--bg-2); padding: 6px 12px; border-radius: 999px; }
-
-  /* 9. 最後 */
-  .final { padding-block: clamp(120px, 18vh, 200px) clamp(64px, 10vh, 120px); }
-  .final .aura { padding: clamp(56px, 10vw, 128px) 20px; text-align: center; }
-  .final img { width: clamp(84px, 9vw, 120px); height: auto; border-radius: 24%; margin: 0 auto 28px; box-shadow: 0 20px 50px rgba(15, 35, 40, 0.2); }
-  .final .cta { margin-top: 30px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
-  .final .lead { margin: 18px auto 0; max-width: 30em; }
-  footer { border-top: 1px solid var(--line); }
-  footer .shell { padding-block: 30px 44px; display: flex; flex-wrap: wrap; gap: 14px 28px; justify-content: space-between; align-items: center; font-size: 13.5px; color: var(--ink-2); }
-  footer nav { display: flex; flex-wrap: wrap; gap: 8px 22px; }
-  footer a { text-decoration: none; }
-  footer a:hover { color: var(--ink); text-decoration: underline; text-underline-offset: 4px; }
-
-  @media (max-width: 1000px) {
-    .exs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  /* 4. 大きな一文（文節ごとに点く） */
+  .tagline { padding-block: var(--s-900); }
+  .tagline .shell { padding-block: var(--s-700); }
+  @media (prefers-reduced-motion: no-preference) {
+    .js .tagline { height: 240vh; padding-block: 0; }
+    .js .tagline .shell { position: sticky; top: 0; display: grid; align-content: center; height: 100vh; height: 100svh; padding-block: 0; }
   }
-  @media (max-width: 900px) {
-    .links { display: none; }
-    .nav .shell { grid-template-columns: 1fr auto; }
-    .row { grid-template-columns: 1fr; }
-    .notes3 { grid-template-columns: 1fr; }
-    .tiles { grid-template-columns: 1fr; }
-    .tile.w2, .tile.w3 { grid-column: auto; }
-    .private .panel { grid-template-columns: 1fr; }
-    .kgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    .steps { grid-template-columns: 1fr; }
-  }
-  @media (max-width: 640px) {
-    .private .panel { padding: 12px; gap: 12px; }
-    .pv { padding: 18px; gap: 14px; }
-    .dict div { font-size: 13px; gap: 8px; padding: 10px 12px; }
-    .facts { grid-template-columns: 1fr; gap: 10px; }
-    .fact { display: flex; justify-content: space-between; align-items: baseline; padding: 16px 20px; }
-    .fact .v { font-size: 28px; margin: 0; }
-    .hero .lead { text-wrap: wrap; }
-    .said-zone { min-height: 118px; }
-    .term .scr { padding-left: 16px; padding-right: 16px; }
-    .fn { display: none; }
-    .exs { grid-template-columns: 1fr; }
-    .kgrid { grid-template-columns: 1fr; }
-    .sl { flex-wrap: wrap; row-gap: 4px; font-size: 13.5px; padding: 11px 14px; }
-    .sl .s { flex-basis: 100%; }
-    .nav .btn { height: 38px; padding: 0 14px; font-size: 13px; }
-    .sound { right: 10px; bottom: 10px; height: 34px; font-size: 12px; padding: 0 12px; }
-  }
+  .still .tagline { height: auto !important; padding-block: var(--s-900) !important; }
+  .still .tagline .shell { position: static !important; height: auto !important; }
+  .tl { width: 100%; max-width: 680px; margin-inline: auto; font-size: 36px; line-height: 40px; font-weight: 500; letter-spacing: -0.025em; }
+  @media (min-width: 768px) { .tl { font-size: 48px; line-height: 1; } }
+  @media (min-width: 1024px) { .tl { font-size: 60px; } }
+  .tl .w { display: inline-block; }
+  .js .tl .w { opacity: 0.35; transition: opacity 0.6s var(--base); }
+  .js .tl .w.on { opacity: 1; }
+  .tl .k { color: var(--teal); }
+  /* 一文の下の波形: 読み進めた分だけ、青緑の波形が左から満ちる */
+  .tl-wave { position: relative; width: 100%; max-width: 680px; height: 48px; margin: var(--s-600) auto 0; }
+  .tw { position: absolute; inset: 0; display: flex; align-items: center; justify-content: space-between; }
+  .tw i { width: 4px; height: 48px; border-radius: var(--r-full); background-color: var(--surface-2); }
+  .tw-on i { background-color: var(--teal); }
+  .js .tw-on { clip-path: inset(0 100% 0 0); }
+
+  /* 5. 普段の文章 */
+  .marquee { margin-top: var(--s-600); overflow: hidden; }
+  .mq-track { display: flex; gap: var(--s-200); width: max-content; }
+  .mq-track ul { display: flex; gap: var(--s-200); }
+  .mq-track.static { width: auto; justify-content: center; padding-inline: var(--s-200); }
+  .mq-track.static ul { flex-wrap: wrap; justify-content: center; }
+  .chip { display: inline-flex; align-items: center; gap: var(--s-100); padding: var(--s-75) var(--s-300) var(--s-75) var(--s-75); border-radius: var(--r-2xl); background-color: var(--surface); font-size: 16px; line-height: 24px; font-weight: 600; white-space: nowrap; }
+  .chip .ic { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--r-lg); background-color: #ffffff; color: var(--teal); }
+  .exs { display: grid; gap: var(--s-200); margin-top: var(--s-200); }
+  @media (min-width: 640px) { .exs { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .exs { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  /* 外のカード 24px・すき間 8px なので、中の板は 16px */
+  .ex, .tile, .step { display: flex; flex-direction: column; min-width: 0; padding: var(--s-75); border-radius: var(--r-3xl); background-color: var(--surface); }
+  .ex-v, .tile-v, .step-v { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); place-items: center; flex: 1; min-height: 224px; padding: var(--s-300); overflow: hidden; border-radius: var(--r-2xl); background-color: #ffffff; }
+  @media (min-width: 768px) { .ex-v, .tile-v { min-height: 272px; } }
+  .ex-t, .tile-t, .step-t { padding: var(--s-200) var(--s-200) var(--s-100); }
+  .ex-t .eyebrow, .step-t .eyebrow { margin-bottom: var(--s-75); }
+  .ex h3, .tile h3, .step h3 { font-size: 18px; line-height: 28px; font-weight: 700; }
+  .ex-t p, .tile-t p, .step-t p { margin-top: var(--s-50); font-size: 14px; line-height: 20px; color: var(--mute); }
+  .pair { width: min(440px, 100%); }
+  .pair .a { display: flex; align-items: flex-start; gap: var(--s-100); padding: var(--s-100) var(--s-200) var(--s-100) var(--s-100); border-radius: var(--r-xl); background-color: var(--surface); font-size: 14px; line-height: 20px; color: var(--ink-2); }
+  .pair .a .mic { width: 24px; height: 24px; }
+  .pair .a .mic .i { width: 12px; height: 12px; }
+  .pair .b { margin: var(--s-75) 0 0 var(--s-300); padding: var(--s-200); border: 1px solid var(--line); border-radius: var(--r-xl); background-color: #ffffff; box-shadow: var(--shadow-sm); font-size: 16px; line-height: 24px; font-weight: 600; }
+  .pair .b .lab { color: var(--teal); font-weight: 400; }
+  .pair .b ol { margin-top: var(--s-50); padding-left: var(--s-300); list-style: decimal; }
+  .panel .pair { width: min(500px, 100%); }
+  .dark .pair .a { background-color: var(--d-2); color: var(--d-text); }
+  .dark .pair .a .mic { background-color: #ffffff; color: var(--ink); }
+  .dark .pair .hf { background-color: rgba(254, 111, 71, 0.2); }
+  .dark .pair .hc.x { background-color: rgba(132, 202, 213, 0.16); color: var(--d-teal); }
+  .dark .pair .b { border-color: transparent; color: var(--ink); }
+
+  /* 6. 使うほど（タイル） */
+  .bento { display: grid; gap: var(--s-200); margin-top: var(--s-600); }
+  @media (min-width: 900px) { .bento { grid-template-columns: repeat(6, minmax(0, 1fr)); margin-top: var(--s-700); } .w3 { grid-column: span 3; } .w2 { grid-column: span 2; } }
+  .mini { display: grid; gap: var(--s-75); width: min(360px, 100%); }
+  .mini .m { display: flex; justify-content: space-between; align-items: center; gap: var(--s-100); padding: var(--s-100) var(--s-200); border-radius: var(--r-xl); background-color: var(--surface); font-size: 14px; line-height: 20px; transition: background-color 0.3s var(--base); }
+  .mini .m.on { background-color: var(--teal-soft); }
+  .mini .m > span:first-child { flex: none; font-family: var(--mono); font-size: 12px; line-height: 16px; letter-spacing: 0.05em; color: var(--mute); }
+  .mini .m b { font-weight: 700; text-align: right; }
+  .bub { display: inline-block; padding: var(--s-50) var(--s-100); border-radius: var(--r-2xl) var(--r-2xl) var(--r-sm) var(--r-2xl); background-color: var(--teal); color: #ffffff; }
+  .dict { position: relative; width: min(340px, 100%); height: 148px; }
+  .dr { position: absolute; left: 0; right: 0; top: 0; display: flex; align-items: center; gap: var(--s-75); height: 44px; padding-inline: var(--s-200); border-radius: var(--r-xl); background-color: var(--surface); font-size: 14px; line-height: 20px; white-space: nowrap; }
+  .dr s { color: var(--mute); text-decoration-color: var(--orange); text-decoration-thickness: 2px; }
+  .dr .ar { display: flex; color: var(--mute); }
+  .dr .ar .i { width: 14px; height: 14px; }
+  .dr em { margin-left: auto; padding: 0 var(--s-75); border-radius: var(--r-md); background-color: var(--teal-soft); font-family: var(--mono); font-style: normal; font-size: 12px; line-height: 16px; color: var(--teal); }
+  .ring { position: relative; display: grid; place-items: center; width: 136px; height: 136px; }
+  .ring svg { position: absolute; inset: 0; transform: rotate(-90deg); }
+  .ring .pulse { position: absolute; inset: 0; border-radius: var(--r-full); box-shadow: 0 0 0 2px var(--teal); opacity: 0; }
+  .ring b { display: block; font-size: 30px; line-height: 36px; font-weight: 700; font-variant-numeric: tabular-nums; text-align: center; }
+  .ring small { display: block; font-size: 12px; line-height: 16px; color: var(--mute); text-align: center; }
+  .langs { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-75); max-width: 320px; }
+  .langs span { padding: var(--s-50) var(--s-200); border-radius: var(--r-full); background-color: var(--surface); font-size: 16px; line-height: 24px; font-weight: 600; transition: background-color 0.3s var(--base), color 0.3s var(--base), transform 0.5s var(--base); }
+  .langs span.on { background-color: var(--ink); color: #ffffff; transform: translateY(-4px); }
+  .ctx { display: grid; gap: var(--s-200); width: 100%; max-width: 520px; }
+  .ctx .scr { padding: var(--s-100) var(--s-200); border-radius: var(--r-xl); background-color: var(--surface); font-size: 14px; line-height: 20px; color: var(--ink-2); }
+  .ctx .scr b { padding-inline: var(--s-25); border-radius: var(--r-sm); background-color: var(--teal-soft); color: var(--ink); transition: background-color 0.3s var(--base); }
+  .ctx .scr b.on { background-color: #b9dce2; }
+  .ctx .res { display: flex; justify-content: center; align-items: center; gap: var(--s-100); font-size: 18px; line-height: 28px; font-weight: 700; }
+  .ctx .res .hf { font-weight: 500; }
+  .ctx .res .ar { display: flex; color: var(--mute); }
+  .ask { display: grid; gap: var(--s-100); width: min(520px, 100%); }
+  .ask .doc { padding: var(--s-200) var(--s-300); border: 1px solid var(--line); border-radius: var(--r-xl); background-color: #ffffff; box-shadow: var(--shadow-sm); font-size: 14px; line-height: 20px; color: var(--ink-2); }
+  @media (min-width: 640px) { .ask .doc { font-size: 16px; line-height: 24px; } }
+  .ask mark { border-radius: var(--r-sm); background-color: #cfe5ea; color: var(--ink); }
+  .ask .cmd2 { justify-self: end; display: flex; align-items: center; gap: var(--s-75); padding: var(--s-50) var(--s-200) var(--s-50) var(--s-50); border-radius: var(--r-full); background-color: var(--ink); color: #ffffff; font-size: 14px; line-height: 20px; font-weight: 700; }
+  .ask .cmd2 .mic { width: 28px; height: 28px; background-color: #ffffff; color: var(--ink); }
+  .eng { display: grid; gap: var(--s-75); width: min(360px, 100%); }
+
+  /* 7. 使い方 */
+  .steps3 { display: grid; gap: var(--s-200); margin-top: var(--s-600); }
+  @media (min-width: 900px) { .steps3 { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: var(--s-700); } }
+  .step-v { min-height: 208px; }
+  .step-v::after { content: ""; position: absolute; inset: 0; border-radius: var(--r-2xl); box-shadow: inset 0 0 0 2px var(--teal); opacity: 0; transition: opacity 0.5s var(--base); }
+  .step.on .step-v::after { opacity: 1; }
+  .field { display: flex; align-items: center; width: min(280px, 100%); min-height: 48px; padding: var(--s-100) var(--s-200); border: 1px solid var(--line); border-radius: var(--r-xl); background-color: #ffffff; box-shadow: var(--shadow-sm); font-size: 16px; line-height: 24px; }
+  .field .caret { display: inline-block; width: 2px; height: 20px; margin-left: var(--s-25); background-color: var(--teal); vertical-align: middle; }
+  .keys { display: grid; gap: var(--s-200); margin-top: var(--s-200); }
+  @media (min-width: 640px) { .keys { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (min-width: 1024px) { .keys { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+  .kc { display: grid; gap: var(--s-75); align-content: start; padding: var(--s-300); border-radius: var(--r-3xl); background-color: var(--surface); }
+  .kc h3 { margin-top: var(--s-100); font-size: 16px; line-height: 24px; font-weight: 700; }
+  .kc p { font-size: 14px; line-height: 20px; color: var(--mute); }
+  .kbd { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-50); font-size: 14px; line-height: 20px; color: var(--mute); }
+  kbd { display: inline-grid; place-items: center; min-width: 40px; height: 40px; padding-inline: var(--s-100); border: 1px solid var(--line); border-radius: var(--r-lg); background-color: #ffffff; box-shadow: 0 2px 0 var(--line); font-family: var(--sans); font-size: 14px; line-height: 20px; font-weight: 700; color: var(--ink); }
+
+  /* 8. プライバシー（面の色を変えた帯） */
+  .band { background-color: var(--surface); }
+  .pvs { display: grid; gap: var(--s-200); margin-top: var(--s-600); }
+  @media (min-width: 900px) { .pvs { grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--s-700); } }
+  .pv { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--s-200); padding: var(--s-300); border-radius: var(--r-3xl); background-color: #ffffff; }
+  .pv .ic { display: grid; place-items: center; width: 48px; height: 48px; border-radius: var(--r-xl); background-color: var(--teal-soft); color: var(--teal); }
+  .pv .ic .i { width: 24px; height: 24px; }
+  .pv h3 { font-size: 18px; line-height: 28px; font-weight: 700; }
+  .pv p { margin-top: var(--s-50); font-size: 14px; line-height: 20px; color: var(--ink-2); }
+  .more { display: inline-flex; align-items: center; gap: var(--s-75); margin-top: var(--s-400); font-size: 16px; line-height: 24px; font-weight: 600; text-decoration: none; }
+  .more .i { width: 16px; height: 16px; transition: transform 0.5s var(--base); }
+  .more:hover .i { transform: translateX(4px); }
+  .more span { text-decoration: underline; text-decoration-color: rgba(10, 10, 10, 0.25); text-underline-offset: 4px; transition: text-decoration-color 0.3s var(--base); }
+  .more:hover span { text-decoration-color: var(--ink); }
+
+  /* 9. よくある質問 */
+  .faq { display: grid; gap: var(--s-600); }
+  @media (min-width: 1024px) { .faq { grid-template-columns: minmax(0, 4fr) minmax(0, 8fr); gap: var(--s-700); } .faq-head { position: sticky; top: var(--s-900); align-self: start; } }
+  .faq-head { display: grid; gap: var(--s-300); }
+  .faq-head .sub { font-size: 16px; line-height: 24px; color: var(--ink-2); }
+  .qa { display: grid; gap: var(--s-75); }
+  .qa details { border-radius: var(--r-2xl); background-color: var(--surface); transition: background-color 0.3s var(--base); }
+  .qa details:hover { background-color: var(--surface-2); }
+  .qa details[open] { background-color: var(--surface); }
+  .qa summary { display: flex; justify-content: space-between; align-items: center; gap: var(--s-200); padding: var(--s-200) var(--s-300); border-radius: var(--r-2xl); list-style: none; cursor: pointer; font-size: 16px; line-height: 24px; font-weight: 600; }
+  @media (min-width: 768px) { .qa summary { padding: var(--s-300); font-size: 18px; line-height: 28px; } }
+  .qa summary::-webkit-details-marker { display: none; }
+  .pm { display: grid; place-items: center; flex: none; width: 32px; height: 32px; border-radius: var(--r-full); background-color: #ffffff; transition: transform 0.5s var(--base); }
+  .pm .i { width: 16px; height: 16px; }
+  .qa details[open] .pm { transform: rotate(45deg); }
+  .qa .ans { padding: 0 var(--s-300) var(--s-300); font-size: 16px; line-height: 24px; color: var(--ink-2); }
+  .qa details[open] .ans { animation: ans 0.5s var(--base); }
+  @keyframes ans { from { opacity: 0; transform: translateY(-8px); } }
+
+  /* 10. 入れ方と最後 */
+  .install { display: grid; gap: var(--s-200); margin-top: var(--s-600); counter-reset: s; }
+  @media (min-width: 900px) { .install { grid-template-columns: repeat(3, minmax(0, 1fr)); margin-top: var(--s-700); } }
+  .install li { padding: var(--s-300); border-radius: var(--r-3xl); background-color: var(--surface); counter-increment: s; }
+  .install li::before { content: counter(s, decimal-leading-zero); font-family: var(--mono); font-size: 12px; line-height: 16px; letter-spacing: 0.1em; color: var(--teal); }
+  .install h3 { margin-top: var(--s-300); font-size: 20px; line-height: 28px; font-weight: 700; }
+  .install p { margin-top: var(--s-75); font-size: 14px; line-height: 20px; color: var(--ink-2); }
+  .install p a { text-underline-offset: 4px; }
+  .install code { padding: 0 var(--s-50); border-radius: var(--r-sm); background-color: #ffffff; }
+  .req { display: flex; flex-wrap: wrap; gap: var(--s-75); margin-top: var(--s-300); }
+  .req span { padding: var(--s-50) var(--s-100); border-radius: var(--r-full); background-color: var(--surface); font-size: 14px; line-height: 20px; color: var(--ink-2); }
+  .final { display: grid; justify-items: center; gap: var(--s-300); margin-top: var(--s-800); padding: var(--s-700) var(--s-300); border-radius: var(--r-3xl); background-color: var(--d-bg); color: #ffffff; text-align: center; }
+  @media (min-width: 768px) { .final { margin-top: var(--s-900); padding: var(--s-900) var(--s-600); } }
+  .final img { width: 96px; height: 96px; border-radius: var(--r-3xl); }
+  .final .h2 { max-width: 680px; }
+  .final .lead { color: var(--d-text); }
+  .final .cta { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-100); margin-top: var(--s-200); }
+
+  /* フッター */
+  .foot { padding-block: var(--s-700) var(--s-400); }
+  .foot-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s-300); }
+  .foot nav { display: flex; flex-wrap: wrap; gap: var(--s-75) var(--s-300); font-size: 14px; line-height: 20px; color: var(--ink-2); }
+  .foot nav a { text-decoration: underline; text-decoration-color: transparent; text-underline-offset: 4px; transition: color 0.3s var(--base), text-decoration-color 0.3s var(--base); }
+  .foot nav a:hover { color: var(--ink); text-decoration-color: var(--ink); }
+  .foot-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: var(--s-300); margin-top: var(--s-700); }
+  .word { font-size: 72px; line-height: 1; font-weight: 700; letter-spacing: -0.05em; color: var(--surface-2); user-select: none; }
+  @media (min-width: 640px) { .word { font-size: 96px; } }
+  @media (min-width: 1024px) { .word { font-size: 128px; } }
+  .copy { padding-bottom: var(--s-100); font-size: 12px; line-height: 16px; color: var(--mute); }
+
+  /* 動きを減らす設定: 動きの代わりに、不透明度だけを変える */
   @media (prefers-reduced-motion: reduce) {
-    .reveal { opacity: 1; transform: none; transition: none; }
-    .aura::before { animation: none; }
-    .pair .b, .sl { opacity: 1; transform: none; transition: none; }
-    .x { text-decoration-color: var(--orange); color: #66787b; transition: none; }
+    .js .reveal, .js .card, .js .card .up { transform: none; filter: none; transition: opacity 0.5s var(--base); }
+    .js .tl .w { opacity: 1; }
   }
+  .still .reveal, .still .card, .still .card .up, .still .tl .w { opacity: 1 !important; transform: none !important; filter: none !important; transition: none !important; }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><symbol id="i-arrow-right" viewBox="0 0 256 256"><path d="M221.66,133.66l-72,72a8,8,0,0,1-11.32-11.32L196.69,136H40a8,8,0,0,1,0-16H196.69L138.34,61.66a8,8,0,0,1,11.32-11.32l72,72A8,8,0,0,1,221.66,133.66Z"/></symbol><symbol id="i-arrow-u-down-left" viewBox="0 0 256 256"><path d="M232,112a64.07,64.07,0,0,1-64,64H51.31l34.35,34.34a8,8,0,0,1-11.32,11.32l-48-48a8,8,0,0,1,0-11.32l48-48a8,8,0,0,1,11.32,11.32L51.31,160H168a48,48,0,0,0,0-96H80a8,8,0,0,1,0-16h88A64.07,64.07,0,0,1,232,112Z"/></symbol><symbol id="i-arrow-up-right" viewBox="0 0 256 256"><path d="M200,64V168a8,8,0,0,1-16,0V83.31L69.66,197.66a8,8,0,0,1-11.32-11.32L172.69,72H88a8,8,0,0,1,0-16H192A8,8,0,0,1,200,64Z"/></symbol><symbol id="i-bug" viewBox="0 0 256 256"><path d="M144,92a12,12,0,1,1,12,12A12,12,0,0,1,144,92ZM100,80a12,12,0,1,0,12,12A12,12,0,0,0,100,80Zm116,64A87.76,87.76,0,0,1,213,167l22.24,9.72A8,8,0,0,1,232,192a7.89,7.89,0,0,1-3.2-.67L207.38,182a88,88,0,0,1-158.76,0L27.2,191.33A7.89,7.89,0,0,1,24,192a8,8,0,0,1-3.2-15.33L43,167A87.76,87.76,0,0,1,40,144v-8H16a8,8,0,0,1,0-16H40v-8a87.76,87.76,0,0,1,3-23L20.8,79.33a8,8,0,1,1,6.4-14.66L48.62,74a88,88,0,0,1,158.76,0l21.42-9.36a8,8,0,0,1,6.4,14.66L213,89.05a87.76,87.76,0,0,1,3,23v8h24a8,8,0,0,1,0,16H216ZM56,120H200v-8a72,72,0,0,0-144,0Zm64,95.54V136H56v8A72.08,72.08,0,0,0,120,215.54ZM200,144v-8H136v79.54A72.08,72.08,0,0,0,200,144Z"/></symbol><symbol id="i-chat-teardrop-text" viewBox="0 0 256 256"><path d="M172,112a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h68A8,8,0,0,1,172,112Zm-8,24H96a8,8,0,0,0,0,16h68a8,8,0,0,0,0-16Zm68-12A100.11,100.11,0,0,1,132,224H48a16,16,0,0,1-16-16V124a100,100,0,0,1,200,0Zm-16,0a84,84,0,0,0-168,0v84h84A84.09,84.09,0,0,0,216,124Z"/></symbol><symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol><symbol id="i-cloud" viewBox="0 0 256 256"><path d="M160,40A88.09,88.09,0,0,0,81.29,88.67,64,64,0,1,0,72,216h88a88,88,0,0,0,0-176Zm0,160H72a48,48,0,0,1,0-96c1.1,0,2.2,0,3.29.11A88,88,0,0,0,72,128a8,8,0,0,0,16,0,72,72,0,1,1,72,72Z"/></symbol><symbol id="i-code" viewBox="0 0 256 256"><path d="M69.12,94.15,28.5,128l40.62,33.85a8,8,0,1,1-10.24,12.29l-48-40a8,8,0,0,1,0-12.29l48-40a8,8,0,0,1,10.24,12.3Zm176,27.7-48-40a8,8,0,1,0-10.24,12.3L227.5,128l-40.62,33.85a8,8,0,1,0,10.24,12.29l48-40a8,8,0,0,0,0-12.29ZM162.73,32.48a8,8,0,0,0-10.25,4.79l-64,176a8,8,0,0,0,4.79,10.26A8.14,8.14,0,0,0,96,224a8,8,0,0,0,7.52-5.27l64-176A8,8,0,0,0,162.73,32.48Z"/></symbol><symbol id="i-desktop" viewBox="0 0 256 256"><path d="M208,40H48A24,24,0,0,0,24,64V176a24,24,0,0,0,24,24h72v16H96a8,8,0,0,0,0,16h64a8,8,0,0,0,0-16H136V200h72a24,24,0,0,0,24-24V64A24,24,0,0,0,208,40ZM48,56H208a8,8,0,0,1,8,8v80H40V64A8,8,0,0,1,48,56ZM208,184H48a8,8,0,0,1-8-8V160H216v16A8,8,0,0,1,208,184Z"/></symbol><symbol id="i-dots-three" viewBox="0 0 256 256"><path d="M140,128a12,12,0,1,1-12-12A12,12,0,0,1,140,128Zm56-12a12,12,0,1,0,12,12A12,12,0,0,0,196,116ZM60,116a12,12,0,1,0,12,12A12,12,0,0,0,60,116Z"/></symbol><symbol id="i-download-simple" viewBox="0 0 256 256"><path d="M228,144v64a12,12,0,0,1-12,12H40a12,12,0,0,1-12-12V144a12,12,0,0,1,24,0v52H204V144a12,12,0,0,1,24,0Zm-108.49,8.49a12,12,0,0,0,17,0l40-40a12,12,0,0,0-17-17L140,115V32a12,12,0,0,0-24,0v83L96.49,95.51a12,12,0,0,0-17,17Z"/></symbol><symbol id="i-envelope-simple" viewBox="0 0 256 256"><path d="M224,48H32a8,8,0,0,0-8,8V192a16,16,0,0,0,16,16H216a16,16,0,0,0,16-16V56A8,8,0,0,0,224,48ZM203.43,64,128,133.15,52.57,64ZM216,192H40V74.19l82.59,75.71a8,8,0,0,0,10.82,0L216,74.19V192Z"/></symbol><symbol id="i-eye-slash" viewBox="0 0 256 256"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L61.32,66.55C25,88.84,9.38,123.2,8.69,124.76a8,8,0,0,0,0,6.5c.35.79,8.82,19.57,27.65,38.4C61.43,194.74,93.12,208,128,208a127.11,127.11,0,0,0,52.07-10.83l22,24.21a8,8,0,1,0,11.84-10.76Zm47.33,75.84,41.67,45.85a32,32,0,0,1-41.67-45.85ZM128,192c-30.78,0-57.67-11.19-79.93-33.25A133.16,133.16,0,0,1,25,128c4.69-8.79,19.66-33.39,47.35-49.38l18,19.75a48,48,0,0,0,63.66,70l14.73,16.2A112,112,0,0,1,128,192Zm6-95.43a8,8,0,0,1,3-15.72,48.16,48.16,0,0,1,38.77,42.64,8,8,0,0,1-7.22,8.71,6.39,6.39,0,0,1-.75,0,8,8,0,0,1-8-7.26A32.09,32.09,0,0,0,134,96.57Zm113.28,34.69c-.42.94-10.55,23.37-33.36,43.8a8,8,0,1,1-10.67-11.92A132.77,132.77,0,0,0,231.05,128a133.15,133.15,0,0,0-23.12-30.77C185.67,75.19,158.78,64,128,64a118.37,118.37,0,0,0-19.36,1.57A8,8,0,1,1,106,49.79,134,134,0,0,1,128,48c34.88,0,66.57,13.26,91.66,38.35,18.83,18.83,27.3,37.62,27.65,38.41A8,8,0,0,1,247.31,131.26Z"/></symbol><symbol id="i-file-text" viewBox="0 0 256 256"><path d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216Zm-32-80a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,136Zm0,32a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,168Z"/></symbol><symbol id="i-github-logo" viewBox="0 0 256 256"><path d="M216,104v8a56.06,56.06,0,0,1-48.44,55.47A39.8,39.8,0,0,1,176,192v40a8,8,0,0,1-8,8H104a8,8,0,0,1-8-8V216H72a40,40,0,0,1-40-40A24,24,0,0,0,8,152a8,8,0,0,1,0-16,40,40,0,0,1,40,40,24,24,0,0,0,24,24H96v-8a39.8,39.8,0,0,1,8.44-24.53A56.06,56.06,0,0,1,56,112v-8a58.14,58.14,0,0,1,7.69-28.32A59.78,59.78,0,0,1,69.07,28,8,8,0,0,1,76,24a59.75,59.75,0,0,1,48,24h24a59.75,59.75,0,0,1,48-24,8,8,0,0,1,6.93,4,59.74,59.74,0,0,1,5.37,47.68A58,58,0,0,1,216,104Z"/></symbol><symbol id="i-keyboard" viewBox="0 0 256 256"><path d="M224,48H32A16,16,0,0,0,16,64V192a16,16,0,0,0,16,16H224a16,16,0,0,0,16-16V64A16,16,0,0,0,224,48Zm0,144H32V64H224V192Zm-16-64a8,8,0,0,1-8,8H56a8,8,0,0,1,0-16H200A8,8,0,0,1,208,128Zm0-32a8,8,0,0,1-8,8H56a8,8,0,0,1,0-16H200A8,8,0,0,1,208,96ZM72,160a8,8,0,0,1-8,8H56a8,8,0,0,1,0-16h8A8,8,0,0,1,72,160Zm96,0a8,8,0,0,1-8,8H96a8,8,0,0,1,0-16h64A8,8,0,0,1,168,160Zm40,0a8,8,0,0,1-8,8h-8a8,8,0,0,1,0-16h8A8,8,0,0,1,208,160Z"/></symbol><symbol id="i-lock-simple" viewBox="0 0 256 256"><path d="M208,80H176V56a48,48,0,0,0-96,0V80H48A16,16,0,0,0,32,96V208a16,16,0,0,0,16,16H208a16,16,0,0,0,16-16V96A16,16,0,0,0,208,80ZM96,56a32,32,0,0,1,64,0V80H96ZM208,208H48V96H208V208Z"/></symbol><symbol id="i-microphone" viewBox="0 0 256 256"><path d="M80,128V64a48,48,0,0,1,96,0v64a48,48,0,0,1-96,0Zm128,0a8,8,0,0,0-16,0,64,64,0,0,1-128,0,8,8,0,0,0-16,0,80.11,80.11,0,0,0,72,79.6V240a8,8,0,0,0,16,0V207.6A80.11,80.11,0,0,0,208,128Z"/></symbol><symbol id="i-plus" viewBox="0 0 256 256"><path d="M224,128a8,8,0,0,1-8,8H136v80a8,8,0,0,1-16,0V136H40a8,8,0,0,1,0-16h80V40a8,8,0,0,1,16,0v80h80A8,8,0,0,1,224,128Z"/></symbol><symbol id="i-scales" viewBox="0 0 256 256"><path d="M239.43,133l-32-80h0a8,8,0,0,0-9.16-4.84L136,62V40a8,8,0,0,0-16,0V65.58L54.26,80.19A8,8,0,0,0,48.57,85h0v.06L16.57,165a7.92,7.92,0,0,0-.57,3c0,23.31,24.54,32,40,32s40-8.69,40-32a7.92,7.92,0,0,0-.57-3L66.92,93.77,120,82V208H104a8,8,0,0,0,0,16h48a8,8,0,0,0,0-16H136V78.42L187,67.1,160.57,133a7.92,7.92,0,0,0-.57,3c0,23.31,24.54,32,40,32s40-8.69,40-32A7.92,7.92,0,0,0,239.43,133ZM56,184c-7.53,0-22.76-3.61-23.93-14.64L56,109.54l23.93,59.82C78.76,180.39,63.53,184,56,184Zm144-32c-7.53,0-22.76-3.61-23.93-14.64L200,77.54l23.93,59.82C222.76,148.39,207.53,152,200,152Z"/></symbol><symbol id="i-shield-check" viewBox="0 0 256 256"><path d="M208,40H48A16,16,0,0,0,32,56v56c0,52.72,25.52,84.67,46.93,102.19,23.06,18.86,46,25.26,47,25.53a8,8,0,0,0,4.2,0c1-.27,23.91-6.67,47-25.53C198.48,196.67,224,164.72,224,112V56A16,16,0,0,0,208,40Zm0,72c0,37.07-13.66,67.16-40.6,89.42A129.3,129.3,0,0,1,128,223.62a128.25,128.25,0,0,1-38.92-21.81C61.82,179.51,48,149.3,48,112l0-56,160,0ZM82.34,141.66a8,8,0,0,1,11.32-11.32L112,148.69l50.34-50.35a8,8,0,0,1,11.32,11.32l-56,56a8,8,0,0,1-11.32,0Z"/></symbol><symbol id="i-sparkle" viewBox="0 0 256 256"><path d="M197.58,129.06,146,110l-19-51.62a15.92,15.92,0,0,0-29.88,0L78,110l-51.62,19a15.92,15.92,0,0,0,0,29.88L78,178l19,51.62a15.92,15.92,0,0,0,29.88,0L146,178l51.62-19a15.92,15.92,0,0,0,0-29.88ZM137,164.22a8,8,0,0,0-4.74,4.74L112,223.85,91.78,169A8,8,0,0,0,87,164.22L32.15,144,87,123.78A8,8,0,0,0,91.78,119L112,64.15,132.22,119a8,8,0,0,0,4.74,4.74L191.85,144ZM144,40a8,8,0,0,1,8-8h16V16a8,8,0,0,1,16,0V32h16a8,8,0,0,1,0,16H184V64a8,8,0,0,1-16,0V48H152A8,8,0,0,1,144,40ZM248,88a8,8,0,0,1-8,8h-8v8a8,8,0,0,1-16,0V96h-8a8,8,0,0,1,0-16h8V72a8,8,0,0,1,16,0v8h8A8,8,0,0,1,248,88Z"/></symbol><symbol id="i-speaker-high" viewBox="0 0 256 256"><path d="M155.51,24.81a8,8,0,0,0-8.42.88L77.25,80H32A16,16,0,0,0,16,96v64a16,16,0,0,0,16,16H77.25l69.84,54.31A8,8,0,0,0,160,224V32A8,8,0,0,0,155.51,24.81ZM32,96H72v64H32ZM144,207.64,88,164.09V91.91l56-43.55Zm54-106.08a40,40,0,0,1,0,52.88,8,8,0,0,1-12-10.58,24,24,0,0,0,0-31.72,8,8,0,0,1,12-10.58ZM248,128a79.9,79.9,0,0,1-20.37,53.34,8,8,0,0,1-11.92-10.67,64,64,0,0,0,0-85.33,8,8,0,1,1,11.92-10.67A79.83,79.83,0,0,1,248,128Z"/></symbol><symbol id="i-speaker-slash" viewBox="0 0 256 256"><path d="M53.92,34.62A8,8,0,1,0,42.08,45.38L73.55,80H32A16,16,0,0,0,16,96v64a16,16,0,0,0,16,16H77.25l69.84,54.31A8,8,0,0,0,160,224V175.09l42.08,46.29a8,8,0,1,0,11.84-10.76ZM32,96H72v64H32ZM144,207.64,88,164.09V95.89l56,61.6Zm42-63.77a24,24,0,0,0,0-31.72,8,8,0,1,1,12-10.57,40,40,0,0,1,0,52.88,8,8,0,0,1-12-10.59Zm-80.16-76a8,8,0,0,1,1.4-11.23l39.85-31A8,8,0,0,1,160,32v74.83a8,8,0,0,1-16,0V48.36l-26.94,21A8,8,0,0,1,105.84,67.91ZM248,128a79.9,79.9,0,0,1-20.37,53.34,8,8,0,0,1-11.92-10.67,64,64,0,0,0,0-85.33,8,8,0,1,1,11.92-10.67A79.83,79.83,0,0,1,248,128Z"/></symbol><symbol id="i-terminal-window" viewBox="0 0 256 256"><path d="M128,128a8,8,0,0,1-3,6.25l-40,32a8,8,0,1,1-10-12.5L107.19,128,75,102.25a8,8,0,1,1,10-12.5l40,32A8,8,0,0,1,128,128Zm48,24H136a8,8,0,0,0,0,16h40a8,8,0,0,0,0-16Zm56-96V200a16,16,0,0,1-16,16H40a16,16,0,0,1-16-16V56A16,16,0,0,1,40,40H216A16,16,0,0,1,232,56ZM216,200V56H40V200H216Z"/></symbol><symbol id="i-translate" viewBox="0 0 256 256"><path d="M247.15,212.42l-56-112a8,8,0,0,0-14.31,0l-21.71,43.43A88,88,0,0,1,108,126.93,103.65,103.65,0,0,0,135.69,64H160a8,8,0,0,0,0-16H104V32a8,8,0,0,0-16,0V48H32a8,8,0,0,0,0,16h87.63A87.76,87.76,0,0,1,96,116.35a87.74,87.74,0,0,1-19-31,8,8,0,1,0-15.08,5.34A103.63,103.63,0,0,0,84,127a87.55,87.55,0,0,1-52,17,8,8,0,0,0,0,16,103.46,103.46,0,0,0,64-22.08,104.18,104.18,0,0,0,51.44,21.31l-26.6,53.19a8,8,0,0,0,14.31,7.16L148.94,192h70.11l13.79,27.58A8,8,0,0,0,240,224a8,8,0,0,0,7.15-11.58ZM156.94,176,184,121.89,211.05,176Z"/></symbol><symbol id="i-x-logo" viewBox="0 0 256 256"><path d="M214.75,211.71l-62.6-98.38,61.77-67.95a8,8,0,0,0-11.84-10.76L143.24,99.34,102.75,35.71A8,8,0,0,0,96,32H48a8,8,0,0,0-6.75,12.3l62.6,98.37-61.77,68a8,8,0,1,0,11.84,10.76l58.84-64.72,40.49,63.63A8,8,0,0,0,160,224h48a8,8,0,0,0,6.75-12.29ZM164.39,208,62.57,48h29L193.43,208Z"/></symbol></svg>
 <a class="skip" href="#main">本文へ移動</a>
+
 <header class="nav" id="nav">
-  <div class="shell">
+  <div class="nav-bar">
     <a class="logo" href="#top" aria-label="Koebumi トップへ">
       <svg viewBox="0 0 1024 1024" aria-hidden="true"><rect width="1024" height="1024" rx="230" fill="#2b6772"/><g transform="translate(-178 -178) scale(40)"><path fill="#fff" d="m21.5 13.48c-0.8623-1.643-2.024-2.343-3.941-2.805-2.262-0.5478-3.642-0.913-5.443-2.881-0.208 0.4312-0.2688 0.908-0.2688 1.364 0 1.938 1.552 2.729 3.399 3.054-2.425 0.213-4.783-0.3855-6.549-1.623-0.1775 2.511 1.501 3.977 4.768 3.657-1.725 0.7051-2.714 0.7609-4.474 0.487 0.208 1.491 1.684 2.724 3.561 2.196-0.9536 1.086-1.527 2.643-1.527 4.058 0 2.440 2.836 5.245 7.664 5.245 1.162 0.01014 2.272-0.01014 3.145-0.01014 0.0558-0.3957 0.0558-0.6949 0.03043-1.06-0.1775-2.719-1.699-3.307-1.699-5.843 0-1.933 1.349-4.352 2.531-5.458-0.4058-0.1877-0.8065-0.2993-1.197-0.3804z"/><path fill="#fe6f47" d="m22.71 13.86c-1.304 1.238-2.455 3.561-2.541 5.209 2.024-0.6848 4.388-1.436 6.128-1.862-0.4514-1.501-2.146-2.8-3.586-3.348z"/><path fill="#fe6f47" d="m20.69 19.56c0.142 1.278 0.913 2.48 1.522 3.135 0.8471-0.4312 1.963-1.091 2.749-1.588 0.2739-0.1826 0.487-0.4007 0.6341-0.5833l-4.905-0.9638z"/></g></svg>
-      Koebumi
+      <span>Koebumi</span>
     </a>
-    <nav class="links" aria-label="サイト">
-      <a href="#agent">Claude Code</a>
+    <nav class="links" aria-label="ページ内">
+      <a href="#agent">Claude&nbsp;Code</a>
       <a href="#polish">普段の文章</a>
+      <a href="#how">使い方</a>
       <a href="#private">プライバシー</a>
-      <a href="#install">入れ方</a>
+      <a href="#faq">よくある質問</a>
     </nav>
-    <a class="btn" href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener">ダウンロード</a>
+    <a class="btn btn-nav" href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener"><svg class="i dl" aria-hidden="true"><use href="#i-download-simple"/></svg>ダウンロード</a>
+    <button class="menu-btn" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu" aria-label="メニューを開く"><span></span><span></span></button>
   </div>
 </header>
+<div class="menu" id="menu" aria-hidden="true" inert>
+  <nav aria-label="メニュー">
+    <a href="#agent" style="--d: 0s">Claude&nbsp;Code</a>
+    <a href="#polish" style="--d: 0.06s">普段の文章</a>
+    <a href="#how" style="--d: 0.12s">使い方</a>
+    <a href="#private" style="--d: 0.18s">プライバシー</a>
+    <a href="#faq" style="--d: 0.24s">よくある質問</a>
+    <a href="#install" style="--d: 0.3s">入れ方</a>
+  </nav>
+  <a class="btn" href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener" style="--d: 0.36s"><svg class="i dl" aria-hidden="true"><use href="#i-download-simple"/></svg>macOS版を無料でダウンロード</a>
+</div>
 
 <main id="main">
   <!-- 1. ファーストビュー -->
-  <section class="hero" id="top">
-    <div class="shell center">
-      <a class="badge reveal" href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener"><img src="assets/favicon.png" alt="" width="24" height="24">無料・オープンソースのmacOSアプリ</a>
-      <h1 class="h-xl reveal">Claude Codeに、<br><span class="g">声で指示する。</span></h1>
-      <p class="lead reveal">Fnキーを押して話すだけ。指示の入力も、許可の確認への返事も、スラッシュコマンドも声でできます。メールやチャットの文章も、同じキーで整います。</p>
-      <div class="cta reveal">
-        <a class="btn" href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>macOS版をダウンロード</a>
-        <a class="btn-2" href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2a10 10 0 0 0-3.16 19.49c.5.09.68-.22.68-.48v-1.7c-2.78.6-3.37-1.34-3.37-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.9 1.52 2.34 1.08 2.91.83.09-.65.35-1.08.63-1.33-2.22-.25-4.55-1.110-4.55-4.94 0-1.09.39-1.98 1.03-2.68-.1-.25-.45-1.27.1-2.65 0 0 .84-.27 2.75 1.02a9.5 9.5 0 0 1 5 0c1.91-1.29 2.75-1.02 2.75-1.02.55 1.38.2 2.4.1 2.65.64.7 1.03 1.59 1.03 2.68 0 3.84-2.34 4.68-4.57 4.93.36.31.68.92.68 1.85v2.74c0 .27.18.58.69.48A10 10 0 0 0 12 2z"/></svg>GitHub</a>
+  <section class="hero" id="top" aria-labelledby="hero-h">
+    <div class="shell hero-in">
+      <div class="hero-grid">
+        <p class="eyebrow h-eye reveal"><img src="assets/favicon.png" alt="" width="20" height="20">macOSの音声入力 ・ 無料・オープンソース</p>
+        <h1 class="h1 grad reveal" id="hero-h" style="--d: 0.08s">Claude&nbsp;Codeに、<br>声で<wbr>指示する。</h1>
+        <p class="lead h-lead reveal" style="--d: 0.16s">Fnキーを押して話すと、言いよどみを除いた指示がClaude&nbsp;CodeやCodexに入ります。許可の確認への返事も、スラッシュコマンドも、ファイル名も声で。</p>
+        <div class="cta-col h-cta reveal" style="--d: 0.24s">
+          <a class="btn" href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener"><svg class="i dl" aria-hidden="true"><use href="#i-download-simple"/></svg>macOS版を無料でダウンロード</a>
+          <p class="fine">macOS 26以降・Appleシリコン ・ <a class="nw" href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener">ソースコードを公開中（MIT）</a></p>
+        </div>
+        <dl class="stats h-stats reveal" style="--d: 0.32s">
+          <div><dt>APIキー</dt><dd>不要</dd></div>
+          <div><dt>料金</dt><dd>0<small>円</small></dd></div>
+          <div><dt>履歴・音声の保存先</dt><dd>このMac<small>だけ</small></dd></div>
+        </dl>
       </div>
-      <div class="meta reveal">macOS 26以降・Appleシリコン</div>
-    </div>
-    <div class="shell">
-      <div class="aura cool stage reveal" id="stage" role="img" aria-label="Claude Codeに「えーと、ストレージマイグレーションテストが落ちてるので、原因を調べて、送信」と話すと、「StorageMigrationTestsが落ちてるので、原因を調べて」と入力して送ります。テストの実行の確認に「いいえ、先にビルドだけして」と話すと、Noを選んでから「先にビルドだけして」と送ります。">
-        <div class="said-zone"><div class="said-card" id="heroSaid"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="lab">話したまま</span><span id="heroSaidText"></span></span></div></div>
+      <div class="stage reveal" id="stage" style="--d: 0.4s" role="img" aria-label="Claude Codeに「えーと、ストレージマイグレーションテストが落ちてるので、原因を調べて、送信」と話すと、「StorageMigrationTestsが落ちてるので、原因を調べて」と入力して送ります。テストの実行の確認に「いいえ、先にビルドだけして」と話すと、Noを選んでから「先にビルドだけして」と送ります。">
+        <div class="wave" id="heroWave" aria-hidden="true"></div>
+        <div class="said-zone" aria-hidden="true"><div class="said" id="heroSaid"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span><span class="lab">話した言葉</span><span id="heroSaidText"></span></span></div></div>
         <div class="term hero-t" aria-hidden="true">
-          <div class="bar"><i></i><i></i><i></i><span>claude — ~/project</span></div>
+          <div class="bar"><i></i><i></i><i></i><span>claude ・ ~/project</span></div>
           <div class="scr" id="heroTerm"></div>
         </div>
-        <div class="vbar" id="heroBar" aria-hidden="true"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span class="bars" id="heroBars"></span></div>
-        <div class="fn" id="heroFn" aria-hidden="true">Fn</div>
-      </div>
-      <div class="facts">
-        <div class="fact reveal"><div class="k">APIキー</div><div class="v">不要</div></div>
-        <div class="fact reveal"><div class="k">料金</div><div class="v">0<small>円</small></div></div>
-        <div class="fact reveal"><div class="k">履歴・音声・辞書の保存先</div><div class="v">このMac<small>だけ</small></div></div>
+        <div class="vbar" id="heroBar" aria-hidden="true"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span class="bars" id="heroBars"></span></div>
+        <button class="key key-btn" id="heroKey" type="button" aria-label="Fn キーを押して、見本をはじめから再生する"><b>Fn</b><span class="key-tip" aria-hidden="true">押して再生</span></button>
       </div>
     </div>
   </section>
 
-  <!-- 2. Claude Code・Codex -->
-  <section class="agent" id="agent" aria-labelledby="agent-h">
+  <!-- 2. 問題と解決 -->
+  <section class="sec" id="why" aria-labelledby="why-h">
     <div class="shell">
-      <div class="head center">
-        <span class="tag reveal">CLAUDE CODE ・ CODEX</span>
-        <h2 class="h-lg reveal" id="agent-h">キーボードに、<br><span class="g">手を戻さない。</span></h2>
-        <p class="lead reveal">ターミナルの画面にClaude CodeやCodexが出ていると、話した内容をエージェントへの指示として入力します。下の見本は、すべてKoebumiで実際に試した結果です。</p>
+      <div class="sec-head">
+        <p class="eyebrow reveal"><b>01</b>なぜKoebumiか</p>
+        <h2 class="h2 reveal" id="why-h">話した言葉は、<br><span class="g">そのままでは<wbr>指示に<wbr>ならない。</span></h2>
+        <p class="lead reveal">話したままの文には「えーと」が残り、ファイル名はカタカナで書かれ、コマンドは「スラッシュ コンパクト」という文になります。Koebumiは画面にClaude&nbsp;CodeやCodexを見つけると、話した内容をエージェントへの指示として整えます。</p>
       </div>
+      <div class="cmp reveal" id="cmp" role="img" aria-label="話したままの文と、Koebumiが入力する文の比べ。「えーと、ストレージマイグレーションテストが落ちてるので、原因を調べて、送信」は「StorageMigrationTestsが落ちてるので、原因を調べて」と入力してEnterを押します。「スラッシュ コンパクト」は「/compact」に、「あの、エージェントインプットの関数を分けて」は「AgentInputの関数を分けて」になります。">
+        <div class="cmp-col raw" aria-hidden="true"><span class="lab">話したまま</span><p id="cmpRaw"></p></div>
+        <div class="cmp-arrow" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></div>
+        <div class="cmp-col out" aria-hidden="true"><span class="lab">Koebumiが入力</span><p id="cmpOut"></p></div>
+      </div>
+      <div class="dots" id="cmpDots" aria-hidden="true"><i><b></b></i><i><b></b></i><i><b></b></i></div>
+    </div>
+  </section>
+
+  <!-- 3. Claude Code・Codex -->
+  <section class="sec dark" id="agent" aria-labelledby="agent-h">
+    <div class="shell">
+      <div class="sec-head">
+        <p class="eyebrow reveal"><b>02</b>Claude&nbsp;Code ・ Codex</p>
+        <h2 class="h2 reveal" id="agent-h">キーボードに、<br><span class="g">手を<wbr>戻さない。</span></h2>
+        <p class="lead reveal">ターミナルにClaude&nbsp;CodeやCodexが出ていると、話した内容をエージェントへの指示として入力します。下の見本は、すべてKoebumiで実際に試した結果です。</p>
+      </div>
+      <div class="feats">
+        <article class="feat">
+          <div class="feat-t reveal"><span class="num">01 / 04 ・ PERMISSION</span><h3>許可の確認に、<wbr>声で答える</h3><p>Claude&nbsp;Codeが「Do&nbsp;you&nbsp;want&nbsp;to&nbsp;proceed?」と聞いてきたら、「はい」「今後は聞かないで」「いいえ」「2番」と話して選べます。「いいえ、先にビルドだけして」と続けると、Noを選んでから続きを送ります。</p></div>
+          <div class="panel card" id="perm">
+            <div class="permw up">
+              <div class="chip-said"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span id="permSaid">「はい」</span></div>
+              <div class="term mini-t" role="img" aria-label="Bashコマンドの実行の確認。「はい」で1. Yes、「今後は聞かないで」で2、「いいえ」で3. No、「2番」で2を選ぶ">
+                <div class="bar"><i></i><i></i><i></i><span>claude ・ ~/project</span></div>
+                <div class="scr" id="permTerm" aria-hidden="true"></div>
+              </div>
+            </div>
+          </div>
+        </article>
+        <article class="feat">
+          <div class="feat-t reveal"><span class="num">02 / 04 ・ SLASH COMMANDS</span><h3>スラッシュコマンドも、<wbr>自作のスキルも</h3><p>「スラッシュ コンパクト」と話すと、整形せずに/compactと入力します。<code>~/.claude/skills</code>や<code>~/.codex/prompts</code>にある自作のコマンドも、名前で呼べます。日本語の名前のスキルは、読みで探します。</p></div>
+          <div class="panel card" id="slash">
+            <div class="slash up">
+              <div class="sl"><span class="s">「スラッシュ コンパクト」</span><span class="ar" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span><span class="sr">と話すと</span><code>/compact</code></div>
+              <div class="sl"><span class="s">「スラッシュ コードレビュー」</span><span class="ar" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span><span class="sr">と話すと</span><code>/code-review</code></div>
+              <div class="sl"><span class="s">「スラッシュ グリルミー」</span><span class="ar" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span><span class="sr">と話すと</span><code>/grill-me</code></div>
+              <div class="sl"><span class="s">「スラッシュ よみやす」</span><span class="ar" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span><span class="sr">と話すと</span><code>/yomiyasu</code><em>日本語の名前</em></div>
+            </div>
+          </div>
+        </article>
+        <article class="feat">
+          <div class="feat-t reveal"><span class="num">03 / 04 ・ FILE NAMES</span><h3>ファイル名は、<wbr>リポジトリの表記で</h3><p>話したファイル名を、作業フォルダにある実際の表記に直します。gitのリポジトリで動いているエージェントなら、設定はいりません。</p></div>
+          <div class="panel card" id="fnames">
+            <div class="fnames up">
+              <div class="fx"><span class="s">「<span class="hk">ストレージドットスウィフト</span>のコメントを見直して」</span><span class="o"><span class="fnm">Storage.swift</span>のコメントを見直して</span></div>
+              <div class="fx"><span class="s">「<span class="hk">リードミー</span>ファイルに使い方を足して」</span><span class="o"><span class="fnm">README</span> ファイルに使い方を足して</span></div>
+              <div class="fx"><span class="s">「<span class="hf x">あの、</span><span class="hk">エージェントインプット</span>の関数を分けて」</span><span class="o"><span class="fnm">AgentInput</span>の関数を分けて</span></div>
+            </div>
+          </div>
+        </article>
+        <article class="feat">
+          <div class="feat-t reveal"><span class="num">04 / 04 ・ SEND</span><h3>最後に「送信」で、<wbr>Enterまで</h3><p>文の最後に「送信」と言うと、入力してからEnterを押します。「送信」だけを話すと、入力欄にある文を送ります。「データを送信」のように文の中で使った語は、命令とみなしません。</p></div>
+          <div class="panel card" id="send">
+            <div class="pair up">
+              <div class="a"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span><span class="hf x">えーと、</span>ファイルネームフィクサーのテストを追加して<span class="hf x">、</span><span class="hc x">送信</span></span></div>
+              <div class="b"><span class="lab">Claude&nbsp;Codeに入力して送る</span><span class="fnm">FileNameFixer</span>のテストを追加して<span class="ent">↵ Enter</span></div>
+            </div>
+          </div>
+        </article>
+      </div>
+      <div class="notes">
+        <div class="note reveal"><svg class="i" aria-hidden="true"><use href="#i-terminal-window"/></svg><h3>Codexでも</h3><p>整形・ファイル名・スラッシュコマンド・送信は、Codexでも使えます。許可の確認に声で答えられるのは、Claude&nbsp;Codeだけです。</p></div>
+        <div class="note reveal" style="--d: 0.08s"><svg class="i" aria-hidden="true"><use href="#i-desktop"/></svg><h3>tmuxやSSHの先でも</h3><p>プロセスではなく画面の文字で見分けるので、tmuxやherdrの中、SSHの先で動いていても使えます。</p></div>
+        <div class="note reveal" style="--d: 0.16s"><svg class="i" aria-hidden="true"><use href="#i-sparkle"/></svg><h3>エージェント向けに整える</h3><p>話した内容がエージェントへの指示であることと、ファイル名やコマンドを話したとおりに書くことを、AIに伝えて整えます。</p></div>
+      </div>
+      <div class="film-cap reveal"><h3>実際の画面で見る</h3><p>Claude&nbsp;Codeに声で指示する様子（34秒）</p></div>
       <div class="frame reveal">
         <video src="assets/koebumi-claude-code-music.mp4" poster="assets/poster-claude-code.webp" muted loop playsinline preload="none" aria-label="Claude Codeに声で指示する様子の動画（34秒）"></video>
-        <button class="sound" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg><span>音を出す</span></button>
-      </div>
-      <div class="rows">
-        <div class="row reveal">
-          <div class="t"><span class="tag">PERMISSION</span><h3 class="h-md">許可の確認に、声で答える</h3><p class="lead">Claude Codeが「Do you want to proceed?」と聞いてきたら、「はい」「今後は聞かないで」「いいえ」「2番」と話して選べます。「いいえ、先にビルドだけして」と続けると、Noを選んでから続きを送ります。</p></div>
-          <div class="aura demo" id="perm"><div class="permw">
-            <div class="said-chip"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span id="permSaid">「はい」</span></div>
-            <div class="term mini-t" role="img" aria-label="Bashコマンドの実行の確認。「はい」で1. Yes、「今後は聞かないで」で2、「いいえ」で3. No、「2番」で2を選ぶ">
-              <div class="bar"><i></i><i></i><i></i><span>claude — ~/project</span></div>
-              <div class="scr" id="permTerm" aria-hidden="true"></div>
-            </div>
-          </div></div>
-        </div>
-        <div class="row reveal">
-          <div class="t"><span class="tag">SLASH COMMANDS</span><h3 class="h-md">スラッシュコマンドも、自作のスキルも</h3><p class="lead">「スラッシュ コンパクト」と話すと、整形せずに/compactと入力します。~/.claude/skillsや~/.codex/promptsにある自作のコマンドも、名前で呼べます。日本語の名前のスキルは、読みで探します。</p></div>
-          <div class="aura cool demo"><div class="slash">
-            <div class="sl"><span class="s">「スラッシュ コンパクト」</span><span class="ar" aria-hidden="true">→</span><span class="sr">と話すと</span><code>/compact</code></div>
-            <div class="sl"><span class="s">「スラッシュ コードレビュー」</span><span class="ar" aria-hidden="true">→</span><span class="sr">と話すと</span><code>/code-review</code></div>
-            <div class="sl"><span class="s">「スラッシュ グリルミー」</span><span class="ar" aria-hidden="true">→</span><span class="sr">と話すと</span><code>/grill-me</code></div>
-            <div class="sl"><span class="s">「スラッシュ よみやす」</span><span class="ar" aria-hidden="true">→</span><span class="sr">と話すと</span><code>/yomiyasu</code><em>日本語の名前</em></div>
-          </div></div>
-        </div>
-        <div class="row reveal">
-          <div class="t"><span class="tag">FILE NAMES</span><h3 class="h-md">ファイル名は、リポジトリの表記で</h3><p class="lead">話したファイル名を、作業フォルダにある実際の表記に直します。gitのリポジトリで動いているエージェントなら、設定はいりません。</p></div>
-          <div class="aura warm demo"><div class="fnames">
-            <div class="fx"><span class="s">「ストレージドットスウィフトのコメントを見直して」</span><span class="o"><span class="fnm">Storage.swift</span>のコメントを見直して</span></div>
-            <div class="fx"><span class="s">「リードミーファイルに使い方を足して」</span><span class="o"><span class="fnm">README</span> ファイルに使い方を足して</span></div>
-            <div class="fx"><span class="s">「<span class="x">あの、</span>エージェントインプットの関数を分けて」</span><span class="o"><span class="fnm">AgentInput</span>の関数を分けて</span></div>
-          </div></div>
-        </div>
-        <div class="row reveal">
-          <div class="t"><span class="tag">SEND</span><h3 class="h-md">最後に「送信」で、Enterまで</h3><p class="lead">文の最後に「送信」と言うと、入力してからEnterを押します。「送信」だけを話すと、入力欄にある文を送ります。「データを送信」のように文の中で使った語は、命令とみなしません。</p></div>
-          <div class="aura cool demo"><div class="pair">
-            <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="x">えーと、</span>ファイルネームフィクサーのテストを追加して<span class="x">、</span><span class="hl-c">送信</span></span></div>
-            <div class="b"><span class="lab">Claude Codeに入力して送る</span><span class="fnm">FileNameFixer</span>のテストを追加して<span class="ent">↵ Enter</span></div>
-          </div></div>
-        </div>
-      </div>
-      <div class="notes3">
-        <div class="note reveal"><h3>Codexでも</h3><p>整形・ファイル名・スラッシュコマンド・送信は、Codexでも使えます。許可の確認に声で答えられるのは、Claude Codeだけです。</p></div>
-        <div class="note reveal"><h3>tmuxやSSHの先でも</h3><p>プロセスではなく画面の文字で見分けるので、tmuxやherdrの中、SSHの先で動いていても使えます。</p></div>
-        <div class="note reveal"><h3>エージェント向けに整える</h3><p>話した内容がエージェントへの指示であることと、ファイル名やコマンドを話したとおりに書くことを、AIに伝えて整えます。</p></div>
+        <button class="sound" type="button" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-speaker-high"/></svg><span>音を出す</span></button>
       </div>
     </div>
   </section>
 
-  <!-- 3. 普段の文章 -->
-  <section class="polish" id="polish" aria-labelledby="polish-h">
+  <!-- 4. 大きな一文 -->
+  <section class="tagline" id="tagline" aria-label="Koebumiの考え方">
     <div class="shell">
-      <div class="head center">
-        <h2 class="h-lg reveal" id="polish-h">メールもチャットも、<br><span class="g">同じFnキーで。</span></h2>
+      <p class="tl" id="tl"><span class="w">話すのは、</span><br><span class="w">考えた順で</span><span class="w">いい。</span><br><span class="w">整えて</span><span class="w">入力するのは、</span><br><span class="w k">Koebumiの</span><span class="w">仕事。</span></p>
+      <div class="tl-wave" aria-hidden="true"><div class="tw" id="twBase"></div><div class="tw tw-on" id="twOn"></div></div>
+    </div>
+  </section>
+
+  <!-- 5. 普段の文章 -->
+  <section class="sec" id="polish" aria-labelledby="polish-h">
+    <div class="shell">
+      <div class="sec-head">
+        <p class="eyebrow reveal"><b>03</b>普段の文章</p>
+        <h2 class="h2 reveal" id="polish-h">メールもチャットも、<br><span class="g">同じ<wbr>Fnキーで。</span></h2>
         <p class="lead reveal">どのアプリでも、カーソルの位置に入ります。入力先のアプリを6種類に分けて、文体を変えます。下の見本も、すべてKoebumiで実際に整形した結果です。</p>
       </div>
-      <div class="aura cool strip reveal" role="list" aria-label="入力先のアプリの種類">
-        <span class="chip" role="listitem"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg></span>メール</span>
-        <span class="chip" role="listitem"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/></svg></span>チャット</span>
-        <span class="chip" role="listitem"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 3h9l4 4v14H6z"/><path d="M9 12h7M9 16h7"/></svg></span>ドキュメント</span>
-        <span class="chip" role="listitem"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 7l-5 5 5 5M16 7l5 5-5 5"/></svg></span>コード</span>
-        <span class="chip" role="listitem"><span class="ic"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.9 5.6L19.5 9.5l-5.6 1.9L12 17l-1.9-5.6L4.5 9.5l5.6-1.9z"/></svg></span>AIチャット</span>
-        <span class="chip" role="listitem"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="6" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="18" cy="12" r="1.5"/></svg></span>その他</span>
+    </div>
+    <div class="marquee reveal" id="mq">
+      <div class="mq-track" id="mqTrack">
+        <ul aria-label="入力先のアプリの種類">
+          <li class="chip"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-envelope-simple"/></svg></span>メール</li>
+          <li class="chip"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-chat-teardrop-text"/></svg></span>チャット</li>
+          <li class="chip"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-file-text"/></svg></span>ドキュメント</li>
+          <li class="chip"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-code"/></svg></span>コード</li>
+          <li class="chip"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-sparkle"/></svg></span>AIチャット</li>
+          <li class="chip"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-dots-three"/></svg></span>その他</li>
+        </ul>
       </div>
+    </div>
+    <div class="shell">
       <div class="exs">
-        <article class="ex reveal">
-          <div class="aura demo"><div class="pair">
-            <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="x">えーと、あの、</span>資料は明日までに送ります</span></div>
+        <article class="ex card">
+          <div class="ex-v"><div class="pair up">
+            <div class="a"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span><span class="hf x">えーと、あの、</span>資料は明日までに送ります</span></div>
             <div class="b"><span class="lab">Koebumiが入力</span>資料は明日までに送ります。</div>
           </div></div>
-          <span class="tag">FILLER</span><h3>言いよどみを除く</h3><p>「えーと」「あの」を取り除き、話した中身だけを残します。</p>
+          <div class="ex-t up"><p class="eyebrow">FILLER</p><h3>言いよどみを除く</h3><p>「えーと」「あの」を取り除き、話した中身だけを残します。</p></div>
         </article>
-        <article class="ex reveal">
-          <div class="aura warm demo"><div class="pair">
-            <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span>会議は<span class="x">火曜日、いや</span>水曜日にしましょう</span></div>
+        <article class="ex card">
+          <div class="ex-v"><div class="pair up">
+            <div class="a"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span>会議は<span class="hf x">火曜日、いや</span>水曜日にしましょう</span></div>
             <div class="b"><span class="lab">Koebumiが入力</span>会議は<span class="new">水曜日</span>にしましょう。</div>
           </div></div>
-          <span class="tag">SELF-CORRECTION</span><h3>言い直しを反映</h3><p>「いや」「違う」「やっぱり」で言い直したら、言い直した後だけを残します。</p>
+          <div class="ex-t up"><p class="eyebrow">CORRECTION</p><h3>言い直しを反映</h3><p>「いや」「違う」「やっぱり」で言い直したら、言い直した後だけを残します。</p></div>
         </article>
-        <article class="ex reveal">
-          <div class="aura cool demo"><div class="pair">
-            <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span>資料は<span class="x">三時</span>までに送って<span class="x">下さい</span></span></div>
+        <article class="ex card">
+          <div class="ex-v"><div class="pair up">
+            <div class="a"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span>資料は<span class="hf x">三時</span>までに送って<span class="hf x">下さい</span></span></div>
             <div class="b"><span class="lab">Koebumiが入力</span>資料は<span class="new">3時</span>までに送って<span class="new">ください</span>。</div>
           </div></div>
-          <span class="tag">NOTATION</span><h3>表記をそろえる</h3><p>数字は算用数字に、補助動詞はひらがなに。AIに任せず決まった規則で直すので、崩れません。</p>
+          <div class="ex-t up"><p class="eyebrow">NOTATION</p><h3>表記をそろえる</h3><p>数字は算用数字に、補助動詞はひらがなに。AIに任せず決まった規則で直すので、崩れません。</p></div>
         </article>
-        <article class="ex reveal">
-          <div class="aura demo"><div class="pair">
-            <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="x">あ、</span>来週の打ち合わせ<span class="x">なんですけど</span>、<span class="x">ちょっと</span>遅れて参加<span class="x">します</span></span></div>
+        <article class="ex card">
+          <div class="ex-v"><div class="pair up">
+            <div class="a"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span><span class="hf x">あ、</span>来週の打ち合わせ<span class="hf x">なんですけど</span>、<span class="hf x">ちょっと</span>遅れて参加<span class="hf x">します</span></span></div>
             <div class="b"><span class="lab">Koebumiが入力（メール）</span>来週の打ち合わせ<span class="new">ですが</span>、<span class="new">少し</span>遅れて参加<span class="new">いたします</span>。</div>
           </div></div>
-          <span class="tag">KEIGO</span><h3>メールは、ていねいに</h3><p>くだけた話し方でも、メールではビジネスの文に直します。</p>
+          <div class="ex-t up"><p class="eyebrow">KEIGO</p><h3>メールは、ていねいに</h3><p>くだけた話し方でも、メールではビジネスの文に直します。</p></div>
         </article>
-        <article class="ex reveal">
-          <div class="aura warm demo"><div class="pair">
-            <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span>明日やることは3つです。1つ目は資料、2つ目は見積もり、3つ目は日程の確認です</span></div>
+        <article class="ex card">
+          <div class="ex-v"><div class="pair up">
+            <div class="a"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span>明日やることは3つです。1つ目は資料、2つ目は見積もり、3つ目は日程の確認です</span></div>
             <div class="b"><span class="lab">Koebumiが入力（メモ）</span>明日やることは3つあります。<ol><li>資料</li><li>見積もり</li><li>日程の確認</li></ol></div>
           </div></div>
-          <span class="tag">LISTS</span><h3>箇条書きに</h3><p>「1つ目は」「2つ目は」と並べて話すと、番号付きの箇条書きにします。</p>
+          <div class="ex-t up"><p class="eyebrow">LISTS</p><h3>箇条書きに</h3><p>「1つ目は」「2つ目は」と並べて話すと、番号付きの箇条書きにします。</p></div>
         </article>
-        <article class="ex reveal">
-          <div class="aura cool demo"><div class="pair">
-            <div class="a"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span><span><span class="x">えーと、</span>明日の会議は4時からです。資料は事前に送ります</span></div>
+        <article class="ex card">
+          <div class="ex-v"><div class="pair up">
+            <div class="a"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span><span class="hf x">えーと、</span>明日の会議は4時からです。資料は事前に送ります</span></div>
             <div class="b" lang="en"><span class="lab" lang="ja">Koebumiが入力（英語）</span>The meeting starts at 4 tomorrow. I will send the materials in advance.</div>
           </div></div>
-          <span class="tag">TRANSLATE ・ Fn + 左⇧</span><h3>話して、そのまま翻訳</h3><p>日本語で話すと、翻訳先の言語で入力します。翻訳先は音声バーで切り替えられます。</p>
+          <div class="ex-t up"><p class="eyebrow">TRANSLATE ・ Fn + 左⇧</p><h3>話して、そのまま翻訳</h3><p>日本語で話すと、翻訳先の言語で入力します。翻訳先は音声バーで切り替えられます。</p></div>
         </article>
       </div>
     </div>
   </section>
 
-  <!-- 4. タイル -->
-  <section class="bento" aria-labelledby="bento-h">
+  <!-- 6. 使うほど -->
+  <section class="sec" id="learn" aria-labelledby="learn-h">
     <div class="shell">
-      <h2 class="h-lg center reveal" id="bento-h">使うほど、<br><span class="g">あなたの文に近づく。</span></h2>
-      <div class="tiles">
-        <article class="tile w3 reveal">
-          <div class="vis aura cool"><div class="mini">
+      <div class="sec-head">
+        <p class="eyebrow reveal"><b>04</b>学習と文脈</p>
+        <h2 class="h2 reveal" id="learn-h">使うほど、<br><span class="g">あなたの<wbr>文に<wbr>近づく。</span></h2>
+      </div>
+      <div class="bento">
+        <article class="tile w3 card">
+          <div class="tile-v"><div class="mini up" id="styleDemo">
             <div class="m"><span>メール</span><b>明日の4時に伺います。</b></div>
             <div class="m"><span>チャット</span><b><span class="bub">明日の4時に伺います</span></b></div>
           </div></div>
-          <h3>アプリごとの文体</h3><p>同じ話し方でも、メールではていねいに、チャットでは句読点なしで入れます。アプリの分類は自分で変えられます。</p>
+          <div class="tile-t up"><h3>アプリごとの文体</h3><p>同じ話し方でも、メールではていねいに、チャットでは句読点なしで入れます。アプリの分類は自分で変えられます。</p></div>
         </article>
-        <article class="tile w3 reveal">
-          <div class="vis aura warm"><div class="dict">
-            <div><s>クロードコード</s>→<b>Claude Code</b><em>自動</em></div>
-            <div><s>棚香</s>→<b>田中</b><em>自動</em></div>
-            <div><s>スレッドカン</s>→<b>スレッド間</b><em>自動</em></div>
+        <article class="tile w3 card">
+          <div class="tile-v"><div class="dict up" id="dict">
+            <div class="dr"><s>クロードコード</s><span class="ar" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span><b>Claude&nbsp;Code</b><em>自動</em></div>
+            <div class="dr"><s>棚香</s><span class="ar" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span><b>田中</b><em>自動</em></div>
+            <div class="dr"><s>スレッドカン</s><span class="ar" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span><b>スレッド間</b><em>自動</em></div>
+            <div class="dr" aria-hidden="true"><s>急</s><span class="ar"><svg class="i"><use href="#i-arrow-right"/></svg></span><b>キュー</b><em>自動</em></div>
           </div></div>
-          <h3>直した言葉を、辞書に覚える</h3><p>入力してから1分以内に単語を直すと、その単語と聞き取られ方を辞書に足します。次からは最初から正しく書きます。</p>
+          <div class="tile-t up"><h3>直した言葉を、辞書に覚える</h3><p>入力してから1分以内に単語を直すと、その単語と聞き取られ方を辞書に足します。次からは最初から正しく書きます。</p></div>
         </article>
-        <article class="tile w2 reveal">
-          <div class="vis aura"><div class="ring"><svg viewBox="0 0 130 130" aria-hidden="true"><circle cx="65" cy="65" r="56" fill="none" stroke="#fff" stroke-width="10"/><circle id="ringArc" cx="65" cy="65" r="56" fill="none" stroke="#2b6772" stroke-width="10" stroke-linecap="round" stroke-dasharray="351.9" stroke-dashoffset="351.9"/></svg><div><b>4/6</b><small>回</small></div></div></div>
-          <h3>文体を学ぶ</h3><p>6回話すごとに、丁寧さや言い回しの癖を学びます。話した内容そのものは保存しません。</p>
+        <article class="tile w2 card">
+          <div class="tile-v"><div class="ring up" id="ring"><span class="pulse"></span><svg viewBox="0 0 136 136" aria-hidden="true"><circle cx="68" cy="68" r="58" fill="none" stroke="#f5f5f4" stroke-width="10"/><circle id="ringArc" cx="68" cy="68" r="58" fill="none" stroke="#2b6772" stroke-width="10" stroke-linecap="round" stroke-dasharray="364.4" stroke-dashoffset="121.5"/></svg><div><b id="ringNum">4/6</b><small>回</small></div></div></div>
+          <div class="tile-t up"><h3>文体を学ぶ</h3><p>6回話すごとに、丁寧さや言い回しの癖を学びます。話した内容そのものは保存しません。</p></div>
         </article>
-        <article class="tile w2 reveal">
-          <div class="vis aura cool"><div class="langs"><span>こんにちは</span><span>Hello</span><span>你好</span><span>안녕하세요</span><span>Bonjour</span><span>Hola</span><span>Olá</span><span>Hallo</span></div></div>
-          <h3>言語を自動で判定</h3><p>このMacで動くモデルは、話した言語を自動で判定します。日本語の文に英語の文が続いても書き起こせます。</p>
+        <article class="tile w2 card">
+          <div class="tile-v"><div class="langs up" id="langs"><span>こんにちは</span><span lang="en">Hello</span><span lang="zh">你好</span><span lang="ko">안녕하세요</span><span lang="fr">Bonjour</span><span lang="es">Hola</span><span lang="pt">Olá</span><span lang="de">Hallo</span></div></div>
+          <div class="tile-t up"><h3>言語を自動で判定</h3><p>このMacで動くモデルは、話した言語を自動で判定します。日本語の文に英語の文が続いても書き起こせます。</p></div>
         </article>
-        <article class="tile w2 reveal">
-          <div class="vis aura warm"><div class="ctx">
+        <article class="tile w2 card">
+          <div class="tile-v"><div class="ctx up" id="ctx">
             <div class="scr">画面: 「<b>渡邉</b>さん、資料ありがとうございます」</div>
-            <div class="res"><s>わたなべさん</s>→ 渡邉さん</div>
+            <div class="res"><span class="hf x">わたなべさん</span><span class="ar" aria-hidden="true"><svg class="i"><use href="#i-arrow-right"/></svg></span><span class="o">渡邉さん</span></div>
           </div></div>
-          <h3>画面の表記に合わせる</h3><p>画面に出ている人名と同じ読みなら、その表記で書きます。読んだ画面の文字は保存しません。</p>
+          <div class="tile-t up"><h3>画面の表記に合わせる</h3><p>画面に出ている人名と同じ読みなら、その表記で書きます。読んだ画面の文字は保存しません。</p></div>
         </article>
-        <article class="tile w3 reveal">
-          <div class="vis aura warm"><div class="ask">
+        <article class="tile w3 card">
+          <div class="tile-v"><div class="ask up" id="ask">
             <div class="doc">お世話になっております。<mark>明日の会議ですが、少し遅れて参加します。</mark>資料は先にお送りします。</div>
-            <div class="cmd"><span class="mic-i"><svg viewBox="0 0 24 24" fill="none" stroke="#16171a" stroke-width="2.6" stroke-linecap="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></span>「もっとていねいに」</div>
+            <div class="cmd2"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span id="askSaid">「もっとていねいに」</span></div>
           </div></div>
-          <h3>選んだ文を、声で書き換える</h3><p>文を選んでFn+Spaceを押し、「もっとていねいに」などと話すと書き換えます。選んだ文について質問すると、カードで答えます。</p>
+          <div class="tile-t up"><h3>選んだ文を、声で書き換える</h3><p>文を選んでFn+Spaceを押し、「もっとていねいに」などと話すと書き換えます。選んだ文について質問すると、カードで答えます。</p></div>
         </article>
-        <article class="tile w3 reveal">
-          <div class="vis aura cool"><div class="mini">
-            <div class="m"><span>ON-DEVICE</span><b>Appleのオンデバイスモデル</b></div>
-            <div class="m"><span>CLAUDE</span><b>Claude・Claude Code経由</b></div>
+        <article class="tile w3 card">
+          <div class="tile-v"><div class="mini eng up" id="eng">
+            <div class="m"><span>ON DEVICE</span><b>Appleのオンデバイスモデル</b></div>
+            <div class="m"><span>CLAUDE</span><b>Claude・Claude&nbsp;Code経由</b></div>
             <div class="m"><span>OPENAI</span><b>OpenAI互換・Codex経由</b></div>
           </div></div>
-          <h3>整えるAIを選べる</h3><p>APIキーなしでも、このMacの中で整えます。より高い精度がほしいときは、ClaudeやOpenAI互換のエンジンに切り替えられます。</p>
+          <div class="tile-t up"><h3>整えるAIを選べる</h3><p>APIキーなしでも、このMacの中で整えます。より高い精度がほしいときは、ClaudeやOpenAI互換のエンジンに切り替えられます。</p></div>
         </article>
       </div>
     </div>
   </section>
 
-  <!-- 5. 動画 -->
-  <section class="film" aria-labelledby="film-h">
-    <div class="shell center">
-      <h2 class="h-lg reveal" id="film-h">30秒で、<span class="g">ぜんぶ見る。</span></h2>
-      <div class="frame reveal">
-        <video src="assets/koebumi-pr.mp4" poster="assets/poster.webp" muted loop playsinline preload="none" aria-label="Koebumi の紹介動画（30秒）"></video>
-        <button class="sound" type="button" aria-pressed="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9z"/><path d="M17 9a4 4 0 0 1 0 6"/></svg><span>音を出す</span></button>
+  <!-- 7. 動画 -->
+  <section class="sec" id="film" aria-labelledby="film-h">
+    <div class="shell">
+      <div class="sec-head">
+        <p class="eyebrow reveal"><b>05</b>動画</p>
+        <h2 class="h2 reveal" id="film-h">30秒で、<span class="g">ぜんぶ<wbr>見る。</span></h2>
+      </div>
+      <div class="frame reveal" style="margin-top: var(--s-600)">
+        <video src="assets/koebumi-pr.mp4" poster="assets/poster.webp" muted loop playsinline preload="none" aria-label="Koebumiの紹介動画（30秒）"></video>
+        <button class="sound" type="button" aria-pressed="false"><svg class="i" aria-hidden="true"><use href="#i-speaker-high"/></svg><span>音を出す</span></button>
       </div>
     </div>
   </section>
 
-  <!-- 6. プライバシー -->
-  <section class="private" id="private" aria-labelledby="private-h">
+  <!-- 8. 使い方 -->
+  <section class="sec" id="how" aria-labelledby="how-h">
     <div class="shell">
-      <h2 class="h-lg center reveal" id="private-h">プライバシーは、<br><span class="g">最初から。</span></h2>
-      <div class="aura panel reveal">
-        <div class="pv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/></svg></span><div><h3>APIキーは、いりません</h3><p>Appleのオンデバイスモデルと、このMacで動く音声認識で使えます。オフラインでも動きます。</p></div></div>
-        <div class="pv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="10" width="14" height="10" rx="2"/><path d="M8 10V8a4 4 0 0 1 8 0v2"/></svg></span><div><h3>保存はこのMacだけ</h3><p>履歴・録音・辞書・学習内容は、このMacにだけ保存します。履歴を「保存しない」も選べます。</p></div></div>
-        <div class="pv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><path d="M3 3l18 18"/></svg></span><div><h3>画面の文字は保存しない</h3><p>人名や用語の表記を合わせるため、Claude Codeを見分けるために画面を読みますが、読んだ内容は保存しません。パスワード欄は読みません。</p></div></div>
-        <div class="pv"><span class="ic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 18a5 5 0 0 1-.6-9.96A7 7 0 0 1 20 9.5 4.5 4.5 0 0 1 18 18z"/></svg></span><div><h3>クラウドは、選んだときだけ</h3><p>ClaudeやOpenAI互換のエンジンを選んだときは、録音か書き起こした文を、選んだサービスに送ります。</p></div></div>
+      <div class="sec-head">
+        <p class="eyebrow reveal"><b>06</b>使い方</p>
+        <h2 class="h2 reveal" id="how-h">話すときは、<br><span class="g">Fnキー<wbr>だけ。</span></h2>
+        <p class="lead reveal">押して、話して、離す。整えた文は、いま開いているアプリのカーソルの位置に入ります。</p>
       </div>
-    </div>
-  </section>
-
-  <!-- 7. ショートカット -->
-  <section class="keys" aria-labelledby="keys-h">
-    <div class="shell">
-      <h2 class="h-lg center reveal" id="keys-h">話すときは、<br><span class="g">Fnキーだけ。</span></h2>
-      <p class="lead center reveal" style="margin: 22px auto 0; max-width: 34em; text-wrap: balance">翻訳・書き換え・貼り付けにも、ショートカットがあります。どれも設定で変えられます。</p>
-      <div class="kgrid">
-        <div class="kc reveal"><div class="kbd"><kbd>Fn</kbd></div><h3>話す</h3><p>短く押すとハンズフリー。押したまま話すと、離したときに入力します。</p></div>
-        <div class="kc reveal"><div class="kbd"><kbd>Fn</kbd>+<kbd>左⇧</kbd></div><h3>翻訳</h3><p>話した内容を、翻訳先の言語で入力します。</p></div>
-        <div class="kc reveal"><div class="kbd"><kbd>Fn</kbd>+<kbd>Space</kbd></div><h3>Ask anything</h3><p>選んだ文の書き換えや、質問への回答。</p></div>
-        <div class="kc reveal"><div class="kbd"><kbd>左⌥</kbd>+<kbd>左⌘</kbd>+<kbd>V</kbd></div><h3>最後の結果を貼り付け</h3><p>直前の結果を、もう一度入力します。</p></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- 8. 入れ方 -->
-  <section class="install" id="install" aria-labelledby="install-h">
-    <div class="shell">
-      <h2 class="h-lg reveal" id="install-h">3つの手順で、<br><span class="g">使い始める。</span></h2>
-      <ol class="steps">
-        <li class="reveal"><h3>ダウンロードする</h3><p><a href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener">Releases</a>から<code>Koebumi-&lt;版&gt;.zip</code>をダウンロードして開き、Koebumi.appを「アプリケーション」フォルダに入れます。</p></li>
-        <li class="reveal"><h3>最初の1回だけ「このまま開く」</h3><p>「開けませんでした」と出たら、システム設定 &gt; プライバシーとセキュリティで「このまま開く」を押します。まだAppleの公証を受けていないためです。</p></li>
-        <li class="reveal"><h3>マイクとアクセシビリティを許可</h3><p>セットアップ画面に沿って許可し、Fnキー（地球儀キー）を押したときの動作を変えます。新しい版は、アプリが知らせます。</p></li>
+      <ol class="steps3" id="howSteps">
+        <li class="step card">
+          <div class="step-v"><div class="key up" id="howKey"><b>Fn</b></div></div>
+          <div class="step-t up"><p class="eyebrow">STEP 01</p><h3>Fnキーを押す</h3><p>短く押すとハンズフリーに、押したまま話すとプッシュトゥトークになります。</p></div>
+        </li>
+        <li class="step card">
+          <div class="step-v"><div class="vbar up" style="margin-top: 0"><span class="mic"><svg class="i"><use href="#i-microphone"/></svg></span><span class="bars" id="howBars"></span></div></div>
+          <div class="step-t up"><p class="eyebrow">STEP 02</p><h3>考えた順に話す</h3><p>「えーと」や言い直しが入っても構いません。Koebumiが取り除きます。</p></div>
+        </li>
+        <li class="step card">
+          <div class="step-v"><div class="field up"><span id="howText">資料は明日までに送ります。</span><span class="caret"></span></div></div>
+          <div class="step-t up"><p class="eyebrow">STEP 03</p><h3>離すと、入る</h3><p>整えた文がカーソルの位置に入ります。ハンズフリーのときは、もう一度押すと入ります。</p></div>
+        </li>
       </ol>
-      <div class="req reveal"><span>macOS 26以降</span><span>Appleシリコン</span><span>Appleのオンデバイスモデルで整えるには、Apple Intelligenceをオン</span></div>
+      <div class="keys">
+        <div class="kc reveal"><div class="kbd"><kbd>Fn</kbd></div><h3>話す</h3><p>短く押すとハンズフリー。押したまま話すと、離したときに入力します。</p></div>
+        <div class="kc reveal" style="--d: 0.06s"><div class="kbd"><kbd>Fn</kbd>+<kbd>左⇧</kbd></div><h3>翻訳</h3><p>話した内容を、翻訳先の言語で入力します。</p></div>
+        <div class="kc reveal" style="--d: 0.12s"><div class="kbd"><kbd>Fn</kbd>+<kbd>Space</kbd></div><h3>Ask&nbsp;anything</h3><p>選んだ文の書き換えや、質問への回答。</p></div>
+        <div class="kc reveal"><div class="kbd"><kbd>左⌥</kbd>+<kbd>左⌘</kbd>+<kbd>V</kbd></div><h3>最後の結果を貼り付け</h3><p>直前の結果を、もう一度入力します。</p></div>
+        <div class="kc reveal" style="--d: 0.06s"><div class="kbd"><kbd>左⌥</kbd>+<kbd>左⌘</kbd>+<kbd>Z</kbd></div><h3>AIの整形を元に戻す</h3><p>直前に入力した文を、AIで整える前の文に置き換えます。</p></div>
+        <div class="kc reveal" style="--d: 0.12s"><div class="kbd"><kbd>Esc</kbd></div><h3>キャンセル</h3><p>録音や処理を止めます。回答カードも閉じます。</p></div>
+      </div>
     </div>
   </section>
 
-  <!-- 9. 最後 -->
-  <section class="final" aria-labelledby="final-h">
+  <!-- 9. プライバシー -->
+  <section class="sec band" id="private" aria-labelledby="private-h">
     <div class="shell">
-      <div class="aura reveal">
-        <img src="assets/icon-512.png" alt="" width="120" height="120" loading="lazy">
-        <h2 class="h-lg" id="final-h">今日から、<br><span class="g">声で指示する。</span></h2>
+      <div class="sec-head">
+        <p class="eyebrow reveal"><b>07</b>プライバシー</p>
+        <h2 class="h2 reveal" id="private-h">プライバシーは、<br><span class="g">最初から。</span></h2>
+      </div>
+      <div class="pvs">
+        <div class="pv reveal"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-desktop"/></svg></span><div><h3>APIキーは、いりません</h3><p>Appleのオンデバイスモデルと、このMacで動く音声認識で使えます。オフラインでも動きます。</p></div></div>
+        <div class="pv reveal" style="--d: 0.08s"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-lock-simple"/></svg></span><div><h3>保存はこのMacだけ</h3><p>履歴・録音・辞書・学習内容は、このMacにだけ保存します。履歴を「保存しない」も選べます。</p></div></div>
+        <div class="pv reveal"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-eye-slash"/></svg></span><div><h3>画面の文字は保存しない</h3><p>人名や用語の表記を合わせるため、Claude&nbsp;Codeを見分けるために画面を読みますが、読んだ内容は保存しません。パスワード欄は読みません。</p></div></div>
+        <div class="pv reveal" style="--d: 0.08s"><span class="ic"><svg class="i" aria-hidden="true"><use href="#i-cloud"/></svg></span><div><h3>クラウドは、選んだときだけ</h3><p>ClaudeやOpenAI互換のエンジンを選んだときは、録音か書き起こした文を、選んだサービスに送ります。</p></div></div>
+      </div>
+      <a class="more reveal" href="privacy.html"><span>プライバシーポリシーを読む</span><svg class="i" aria-hidden="true"><use href="#i-arrow-right"/></svg></a>
+    </div>
+  </section>
+
+  <!-- 10. よくある質問 -->
+  <section class="sec" id="faq" aria-labelledby="faq-h">
+    <div class="shell faq">
+      <div class="faq-head">
+        <p class="eyebrow reveal"><b>08</b>よくある質問</p>
+        <h2 class="h2 reveal" id="faq-h">気になる<wbr>ところ。</h2>
+        <p class="sub reveal">ここにない質問や不具合は、<a href="https://github.com/koebumi/koebumi/issues" target="_blank" rel="noopener">GitHubのIssues</a>に送ってください。</p>
+      </div>
+      <div class="qa">
+        <details class="reveal"><summary>本当に無料ですか？<span class="pm" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary><p class="ans">はい。MIT&nbsp;Licenseのオープンソースで、アプリに料金はかかりません。ClaudeやOpenAI互換のエンジンを選んだときだけ、そのサービスの利用料がかかります。</p></details>
+        <details class="reveal"><summary>APIキーがなくても使えますか？<span class="pm" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary><p class="ans">使えます。既定では、Appleのオンデバイスモデルと音声認識を使います。このMacで動く音声認識モデル（5種類）も、キーなしで選べます。</p></details>
+        <details class="reveal"><summary>どのMacで動きますか？<span class="pm" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary><p class="ans">macOS 26以降の、AppleシリコンのMacです。Appleのオンデバイスモデルで整形するには、Apple&nbsp;Intelligenceをオンにしてください。WindowsやiPhoneの版はありません。</p></details>
+        <details class="reveal"><summary>話した内容は、どこへ送られますか？<span class="pm" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary><p class="ans">既定では送りません。音声認識も整形も、このMacの中で行います。ClaudeやOpenAI互換のエンジンを選んだときだけ、録音か書き起こした文を、選んだサービスに送ります。</p></details>
+        <details class="reveal"><summary>「開けませんでした」と表示されて開けません<span class="pm" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary><p class="ans">まだAppleの公証を受けていないためです。「完了」を押してから、システム設定 &gt; プライバシーとセキュリティを開き、「Koebumi」の「このまま開く」を押してください。必要なのは最初の1回だけです。</p></details>
+        <details class="reveal"><summary>Codexでも使えますか？<span class="pm" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary><p class="ans">使えます。整形、ファイル名の修正、スラッシュコマンド、「送信」でのEnterは、Codexでも動きます。許可の確認に声で答えられるのは、Claude&nbsp;Codeだけです。</p></details>
+        <details class="reveal"><summary>tmuxやSSHの先のClaude&nbsp;Codeでも使えますか？<span class="pm" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary><p class="ans">使えます。プロセスではなく画面の文字で見分けるので、tmuxやherdrの中、SSHの先でも動きます。ただし、tmuxで画面を左右に分けているときは、許可の確認には答えません。</p></details>
+        <details class="reveal"><summary>ClaudeやChatGPTのサブスクで整形できますか？<span class="pm" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary><p class="ans">できます。このMacのClaude&nbsp;CodeやCodexを起動して整形するので、それぞれと同じ利用枠を使います。Koebumiはログインのトークンに触れません。各社の規約や方針が変わると、使えなくなることがあります。</p></details>
+        <details class="reveal"><summary>日本語以外でも使えますか？<span class="pm" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary><p class="ans">使えます。このMacで動くモデルは、話した言語を自動で判定します。翻訳先を選べば、日本語で話して英語で入力することもできます。アプリの表示は日本語と英語です。</p></details>
+        <details class="reveal"><summary>新しい版は、どう入れますか？<span class="pm" aria-hidden="true"><svg class="i"><use href="#i-plus"/></svg></span></summary><p class="ans">新しい版が出ると、Koebumiが知らせます。確認のために1日1回GitHubにアクセスします。設定 &gt; 一般でオフにできます。</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11. 入れ方と最後 -->
+  <section class="sec" id="install" aria-labelledby="install-h">
+    <div class="shell">
+      <div class="sec-head">
+        <p class="eyebrow reveal"><b>09</b>入れ方</p>
+        <h2 class="h2 reveal" id="install-h">3つの手順で、<br><span class="g">使い<wbr>始める。</span></h2>
+      </div>
+      <ol class="install">
+        <li class="reveal"><h3>ダウンロードする</h3><p><a href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener">Releases</a>から<code>Koebumi-&lt;版&gt;.zip</code>をダウンロードして開き、Koebumi.appを「アプリケーション」フォルダに入れます。</p></li>
+        <li class="reveal" style="--d: 0.08s"><h3>最初の1回だけ「このまま開く」</h3><p>「開けませんでした」と出たら、システム設定 &gt; プライバシーとセキュリティで「このまま開く」を押します。まだAppleの公証を受けていないためです。</p></li>
+        <li class="reveal" style="--d: 0.16s"><h3>マイクとアクセシビリティを許可</h3><p>セットアップ画面に沿って許可し、Fnキー（地球儀キー）を押したときの動作を変えます。新しい版は、アプリが知らせます。</p></li>
+      </ol>
+      <div class="req reveal"><span>macOS 26以降</span><span>Appleシリコン</span><span>Appleのオンデバイスモデルで整えるには、Apple&nbsp;Intelligenceをオン</span></div>
+      <div class="final reveal" aria-labelledby="final-h">
+        <img src="assets/icon-512.png" alt="" width="96" height="96" loading="lazy">
+        <h2 class="h2" id="final-h">今日から、<br><span class="g">声で<wbr>指示する。</span></h2>
         <p class="lead">無料・オープンソース（MIT）。macOS 26以降のAppleシリコンのMacで動きます。</p>
         <div class="cta">
-          <a class="btn" href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></svg>macOS版をダウンロード</a>
-          <a class="btn-2" href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener">ソースコードを見る</a>
+          <a class="btn btn-light" href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener"><svg class="i dl" aria-hidden="true"><use href="#i-download-simple"/></svg>macOS版を無料でダウンロード</a>
+          <a class="btn btn-ghost" href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-github-logo"/></svg>ソースコードを見る</a>
         </div>
       </div>
     </div>
   </section>
 </main>
 
-<footer>
+<footer class="foot">
   <div class="shell">
-    <span>© 2026 Koebumi ・ MIT License</span>
-    <nav aria-label="フッター">
-      <a href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener">ダウンロード</a>
-      <a href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener">GitHub</a>
-      <a href="https://github.com/koebumi/koebumi/issues" target="_blank" rel="noopener">不具合・要望</a>
-      <a href="https://x.com/koebumi_app" target="_blank" rel="noopener">X @koebumi_app</a>
-    </nav>
+    <div class="foot-top">
+      <a class="logo" href="#top" aria-label="Koebumi トップへ"><img src="assets/favicon.png" alt="" width="28" height="28"><span>Koebumi</span></a>
+      <nav aria-label="フッター">
+        <a href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener">ダウンロード</a>
+        <a href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/koebumi/koebumi/issues" target="_blank" rel="noopener">不具合・要望</a>
+        <a href="https://x.com/koebumi_app" target="_blank" rel="noopener">X @koebumi_app</a>
+        <a href="privacy.html">プライバシーポリシー</a>
+        <a href="https://github.com/koebumi/koebumi/blob/main/LICENSE" target="_blank" rel="noopener">利用規約（MIT&nbsp;License）</a>
+      </nav>
+    </div>
+    <div class="foot-bottom">
+      <p class="word" aria-hidden="true">Koebumi</p>
+      <p class="copy">© 2026 Koebumi ・ MIT&nbsp;License</p>
+    </div>
   </div>
 </footer>
 
 <script>
 (function () {
+  const root = document.documentElement;
+  const still = /[?&]still\b/.test(location.search) || matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (still) root.classList.add("still");
+  const $ = (id) => document.getElementById(id);
+  const $$ = (sel, el = document) => [...el.querySelectorAll(sel)];
   const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
   const prog = (x, a, b) => clamp((x - a) / (b - a));
-  const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const $ = (id) => document.getElementById(id);
+  const inOut = (k) => (k < 0.5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2);
+  const out = (k) => 1 - Math.pow(1 - k, 4);
+  const lerp = (a, b, k) => a + (b - a) * k;
+  // [[時刻, 値], ...] を区間ごとになめらかにつなぐ
+  function track(keys, t, ease = inOut) {
+    if (t <= keys[0][0]) return keys[0][1];
+    for (let i = 1; i < keys.length; i++) {
+      const [t1, v1] = keys[i], [t0, v0] = keys[i - 1];
+      if (t <= t1) return v0 + (v1 - v0) * ease(Math.min(1, (t - t0) / (t1 - t0 || 1)));
+    }
+    return keys[keys.length - 1][1];
+  }
   const watch = (el, cb, opts) => { if (!("IntersectionObserver" in window)) { cb(true); return; } new IntersectionObserver((es) => es.forEach((e) => cb(e.isIntersecting)), opts).observe(el); };
   // 前と同じ中身なら書き換えない（毎フレーム描き直さない）
   const put = (el, html) => { if (el._html !== html) { el.innerHTML = html; el._html = html; } };
-  // ターミナルの行。[クラス, 中身] か 中身だけ
-  const lines = (ls) => ls.map((l) => Array.isArray(l) ? `<div class="ln ${l[0]}">${l[1] || " "}</div>` : `<div class="ln">${l || " "}</div>`).join("");
+  const css = (el, prop, v) => { if (el["_" + prop] !== v) { el.style[prop] = v; el["_" + prop] = v; } };
+  const flag = (el, cls, on) => { if (el.classList.contains(cls) !== on) el.classList.toggle(cls, on); };
+  // 下から上がりながら、ぼかしから戻る（k: 0 で消えた形、1 で見本どおり）
+  const rise = (el, k, dy = 10, blur = 4) => {
+    css(el, "opacity", k >= 1 ? "" : k.toFixed(3));
+    css(el, "transform", k >= 1 ? "" : `translateY(${((1 - k) * dy).toFixed(1)}px)`);
+    css(el, "filter", k >= 1 ? "" : `blur(${((1 - k) * blur).toFixed(1)}px)`);
+  };
+  const fade = (el, k) => css(el, "opacity", k >= 1 ? "" : k.toFixed(3));
+  const bump = (el, s) => css(el, "transform", Math.abs(s - 1) < 0.001 ? "" : `scale(${s.toFixed(3)})`);
 
+  // ---- ファーストビューの見出し: 英字は単語ごと、日本語は 1 字ずつ、55 ミリ秒おきに現れる ----
+  const h1 = $("hero-h");
+  if (!still) {
+    h1.classList.remove("reveal");
+    let n = 0;
+    const wrap = (node) => {
+      for (const c of [...node.childNodes]) {
+        if (c.nodeType === 1) { wrap(c); continue; }
+        if (c.nodeType !== 3) continue;
+        const f = document.createDocumentFragment();
+        for (const tok of c.textContent.match(/[A-Za-z0-9]+|\s+|./gu) || []) {
+          if (/^\s+$/.test(tok)) { f.appendChild(document.createTextNode(tok)); continue; }
+          const sp = document.createElement("span");
+          sp.className = "ch";
+          sp.textContent = tok;
+          sp.style.setProperty("--cd", (0.2 + n++ * 0.055).toFixed(3) + "s");
+          f.appendChild(sp);
+        }
+        c.replaceWith(f);
+      }
+    };
+    wrap(h1);
+    requestAnimationFrame(() => requestAnimationFrame(() => h1.classList.add("typed")));
+  }
+
+  // ---- 見本の時計: 見えている間だけ進む。どの見本も見本どおりの形から始まり、その形に戻る ----
+  const stories = [];
+  function story(el, draw, { start = 0, rest = start, wait = 0.9 } = {}) {
+    if (!el) return;
+    if (still) { draw(rest); return; }
+    const s = { draw, t: start, wait, on: false };
+    draw(start);
+    stories.push(s);
+    watch(el, (v) => { s.on = v; }, { threshold: 0.25 });
+    return s;
+  }
+  let last = 0;
+  function frame(now) {
+    const dt = last ? Math.min(0.05, (now - last) / 1000) : 0;
+    last = now;
+    for (const s of stories) {
+      if (!s.on) continue;
+      if (s.wait > 0) { s.wait -= dt; continue; }
+      s.t += dt;
+      s.draw(s.t);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  // ---- ターミナルの行 ----
+  const lines = (ls) => ls.map((l) => Array.isArray(l) ? `<div class="ln ${l[0]}">${l[1] || " "}</div>` : `<div class="ln">${l || " "}</div>`).join("");
   const P = `<span class="t-te">❯</span> `;
   const CUR = `<span class="cur"></span>`;
   const ENT = `  <span class="enter">↵ Enter</span>`;
@@ -663,9 +1040,20 @@
     ...OPTIONS.map((o, i) => ["cut", i === sel ? ` <span class="${chosen ? "t-sel" : ""}"><span class="t-te">❯</span> ${o}</span>` : `   <span class="t-dim">${o}</span>`]),
     `<span class="t-dim"> Esc to cancel</span>`,
   ];
+  // 話した言葉（f: 取り除く言葉、c: 命令として受け取る言葉、k: 表記を直す言葉）。marked で印を付ける
+  function saidHTML(parts, n, marked) {
+    let k = n, html = "";
+    for (const [s, kind] of parts) {
+      const m = Math.min(s.length, Math.max(0, k)); k -= s.length;
+      if (m <= 0) continue;
+      const txt = s.slice(0, m), x = marked ? " x" : "";
+      html += kind === "f" ? `<span class="hf${x}">${txt}</span>` : kind === "c" ? `<span class="hc${x}">${txt}</span>` : kind === "k" ? `<span class="hk${x}">${txt}</span>` : txt;
+    }
+    return html;
+  }
 
-  // ---- ファーストビュー: 話す → 指示を入力して送る → 確認に「いいえ、先にビルドだけして」と答える。13 秒ごとに繰り返す ----
-  // 文はどれも Koebumi の CLI で実際に出したもの（f: 取り除く言葉、c: 命令として受け取る言葉）
+  // ---- 1. ファーストビュー: 話す → 指示を入力して送る → 確認に「いいえ、先にビルドだけして」と答える。13 秒ごとに繰り返す ----
+  // 文はどれも Koebumi の CLI で実際に出したもの
   const SAY = [
     [["えーと、", "f"], ["ストレージマイグレーションテストが落ちてるので、原因を調べて", ""], ["、", "f"], ["送信", "c"]],
     [["いいえ", "c"], ["、先にビルドだけして", ""]],
@@ -674,34 +1062,41 @@
   const A = { down: 0.3, t0: 0.55, t1: 2.9, up: 3.1, mark: 3.4, input: 3.9, enter: 4.5, sent: 5.2 };
   const B = { prompt: 5.5, down: 6.3, t0: 6.5, t1: 7.6, up: 7.8, mark: 8.0, choose: 8.4, close: 9.0, enter: 9.6, sent: 10.2 };
   const LOOP = 13;
-  const bars = $("heroBars");
-  for (let i = 0; i < 9; i++) bars.appendChild(document.createElement("i"));
-  const heroAt = performance.now();
-  let heroOn = true;
-
-  function saidHTML(parts, n, marked) {
-    let k = n, html = "";
-    for (const [s, kind] of parts) {
-      const m = Math.min(s.length, Math.max(0, k)); k -= s.length;
-      if (m <= 0) continue;
-      const txt = s.slice(0, m);
-      html += kind === "f" ? `<span class="hl-f${marked ? " x" : ""}">${txt}</span>` : kind === "c" ? `<span class="${marked ? "hl-c" : ""}">${txt}</span>` : txt;
-    }
-    return html;
+  const heroBars = $("heroBars"), wave = $("heroWave");
+  for (let i = 0; i < 9; i++) heroBars.appendChild(document.createElement("i"));
+  const vb = [...heroBars.children];
+  vb.forEach((b) => { b._rest = 0.14; });
+  let wv = [];
+  function buildWave() {
+    const n = Math.max(12, Math.floor(wave.getBoundingClientRect().width / 12));
+    if (n === wv.length) return;
+    wave.innerHTML = "<i></i>".repeat(n);
+    wv = [...wave.children];
+    // 話した声の輪郭のような、決まった高さの並び
+    wv.forEach((b, i) => { const c = (i - (n - 1) / 2) / (n / 3); b._rest = 0.05 + 0.3 * Math.exp(-c * c) * Math.abs(Math.sin(i * 0.37) * Math.sin(i * 0.11 + 1)); });
   }
-
-  function hero(now) {
-    const t = reduce ? 8.6 : ((now - heroAt) / 1000) % LOOP;
-    // 話した言葉のカード
+  buildWave();
+  addEventListener("resize", buildWave);
+  // 声の大きさ（話している間だけ上がる）
+  const listening = (t) => Math.max(Math.min(prog(t, A.down, A.down + 0.3), 1 - prog(t, A.up, A.up + 0.3)), Math.min(prog(t, B.down, B.down + 0.3), 1 - prog(t, B.up, B.up + 0.3)));
+  function drawBars(bars, t, lvl, spread) {
+    const mid = (bars.length - 1) / 2;
+    bars.forEach((b, i) => {
+      const c = (i - mid) / spread, env = Math.exp(-c * c);
+      const v = 0.5 + 0.5 * Math.sin(t * 12.7 + i * 1.6) * Math.sin(t * 4.9 + i * 0.8);
+      const idle = b._rest + 0.02 * Math.sin(t * 1.6 + i * 0.45);
+      const s = idle + lvl * env * (0.15 + 0.85 * v);
+      css(b, "transform", `scaleY(${s.toFixed(3)})`);
+    });
+  }
+  function hero(T) {
+    const t = T % LOOP;
     const first = t < 5.8, S = first ? A : B, parts = SAY[first ? 0 : 1];
     const len = parts.reduce((n, p) => n + p[0].length, 0);
-    put($("heroSaidText"), saidHTML(parts, Math.ceil(len * prog(t, S.t0, S.t1)), t > S.mark) || "&nbsp;");
+    put($("heroSaidText"), saidHTML(parts, Math.ceil(len * prog(t, S.t0, S.t1)), t > S.mark) || `<span class="caret"></span>`);
     const vis = first ? Math.min(prog(t, 0.4, 0.75), 1 - prog(t, 4.9, 5.3)) : Math.min(prog(t, 6.15, 6.5), 1 - prog(t, 10.2, 10.6));
-    const card = $("heroSaid");
-    card.style.opacity = vis.toFixed(3);
-    card.style.transform = `translateY(${((1 - vis) * 10).toFixed(1)}px)`;
+    rise($("heroSaid"), out(vis), 10, 4);
 
-    // ターミナル
     const L = [...HEAD];
     if (t < A.sent) {
       L.push(["box", P + (t < A.input ? CUR : MSG1 + (t < A.enter ? CUR : ENT))]);
@@ -717,69 +1112,277 @@
     }
     const term = $("heroTerm");
     put(term, lines(L));
-    term.style.opacity = reduce ? 1 : (1 - prog(t, 12.4, 12.85)).toFixed(3);
+    fade(term, still ? 1 : 1 - prog(t, 12.4, 12.85) + prog(t, 12.95, 13));
 
     // Fn キーは話している間だけ押し込む。音声バーは話している間と、整えている間に出る
     const press = Math.max(Math.min(prog(t, A.down, A.down + 0.15), 1 - prog(t, A.up, A.up + 0.15)), Math.min(prog(t, B.down, B.down + 0.15), 1 - prog(t, B.up, B.up + 0.15)));
-    const fn = $("heroFn");
-    fn.style.transform = `translateY(${(press * 6).toFixed(1)}px)`;
-    fn.style.boxShadow = `0 ${(7 - press * 6).toFixed(1)}px 0 #d4dbdc, 0 18px 40px rgba(15,35,40,0.14), 0 0 0 ${(press * 10).toFixed(1)}px rgba(254,111,71,${(0.22 * press).toFixed(3)})`;
+    const key = $("heroKey");
+    css(key.firstElementChild, "transform", press ? `translateY(${(press * 8).toFixed(1)}px)` : "");
+    flag(key, "on", press > 0.5);
     const ba = Math.max(Math.min(prog(t, 0.25, 0.6), 1 - prog(t, A.input - 0.1, A.input + 0.3)), Math.min(prog(t, B.down - 0.05, B.down + 0.3), 1 - prog(t, B.choose - 0.1, B.choose + 0.3)));
-    const bar = $("heroBar");
-    bar.style.opacity = ba.toFixed(3);
-    bar.style.transform = `translateY(${((1 - ba) * 10).toFixed(1)}px)`;
-    const listening = (t > A.down && t < A.up) || (t > B.down && t < B.up);
-    [...bars.children].forEach((b, i) => {
-      let h, w, left, top;
-      if (listening) { const c = i - 4, env = Math.exp(-(c * c) / 12); const v = 0.5 + 0.5 * Math.sin(now / 1000 * 12.7 + i * 1.6) * Math.sin(now / 1000 * 4.9 + i * 0.8); h = 3 + 26 * env * v; w = 2.5; left = 4 + i * 8; top = -h / 2; }
-      else { const j = i - 3, on = j >= 0 && j < 3; h = on ? 4 : 0; w = 4; left = 4 + 4 * 8 + (j - 1) * 8; top = -2 + (on ? Math.sin(now / 1000 * 5.2 - j) * 3 : 0); }
-      b.style.height = h.toFixed(1) + "px"; b.style.width = w + "px"; b.style.left = left + "px"; b.style.marginTop = top.toFixed(1) + "px";
+    rise($("heroBar"), still ? 1 : out(ba), 10, 4);
+    const lvl = listening(t);
+    drawBars(vb, T, lvl, 2.6);
+    drawBars(wv, T * 0.8, lvl * 0.85, wv.length / 4);
+  }
+  const heroStory = story($("stage"), hero, { start: 0, rest: 8.6, wait: 0.4 });
+  $("heroKey").addEventListener("click", () => { if (heroStory) { heroStory.t = 0; heroStory.wait = 0; hero(0); } });
+
+  // ---- 2. 話したまま → 入力されるもの。3 つの例を順に打つ ----
+  const CMP = [
+    { raw: [["えーと、", "f"], ["ストレージマイグレーションテスト", "k"], ["が落ちてるので、原因を調べて", ""], ["、", "f"], ["送信", "c"]], out: `<span class="fnm">StorageMigrationTests</span>が落ちてるので、原因を調べて<span class="ent">↵ Enter</span>` },
+    { raw: [["スラッシュ コンパクト", "c"]], out: `<span class="cmd">/compact</span>` },
+    { raw: [["あの、", "f"], ["エージェントインプット", "k"], ["の関数を分けて", ""]], out: `<span class="fnm">AgentInput</span>の関数を分けて` },
+  ];
+  const CSEG = 5.6;
+  const cmpRaw = $("cmpRaw"), cmpOut = $("cmpOut"), cmpDots = $$("#cmpDots b");
+  function cmp(t) {
+    const n = Math.floor(t / CSEG) % CMP.length, lt = t % CSEG, ex = CMP[n];
+    const len = ex.raw.reduce((a, p) => a + p[0].length, 0);
+    const t1 = 0.4 + Math.min(2.2, len * 0.05);
+    put(cmpRaw, saidHTML(ex.raw, Math.ceil(len * prog(lt, 0.4, t1)), lt > t1 + 0.3) || "&nbsp;");
+    put(cmpOut, ex.out);
+    const gone = 1 - prog(lt, CSEG - 0.5, CSEG - 0.1);
+    fade(cmpRaw, gone);
+    const k = out(prog(lt, t1 + 0.8, t1 + 1.4));
+    rise(cmpOut, Math.min(k, gone), 10, 4);
+    cmpDots.forEach((d, i) => css(d, "transform", `scaleX(${i === n ? prog(lt, 0, CSEG).toFixed(3) : i < n ? 1 : 0})`));
+  }
+  story($("cmp"), cmp, { start: 4.2, wait: 0.6 });
+
+  // ---- 3. 許可の確認: 話した言葉ごとに、選ぶ選択肢が変わる（CLI で確かめた対応） ----
+  const PERM = [["はい", 0], ["今後は聞かないで", 1], ["いいえ", 2], ["2番", 1]];
+  const permSaid = $("permSaid"), permTerm = $("permTerm");
+  function perm(t) {
+    const SEG = 2.6, [said, sel] = PERM[Math.floor(t / SEG) % PERM.length], lt = t % SEG;
+    put(permSaid, `「${said.slice(0, Math.ceil(said.length * prog(lt, 0.1, 0.5)))}」`);
+    put(permTerm, lines(promptLines("swift test --filter StorageMigrationTests", lt < 0.8 ? 0 : sel, lt >= 0.8)));
+  }
+  story($("perm"), perm, { start: 1.5 });
+
+  // スラッシュコマンド: 1 行ずつ、話した言葉からコマンドが出る
+  const sls = $$("#slash .sl");
+  function slash(t) {
+    const ROW = 1.5, k = Math.floor(t / ROW) % sls.length, lt = t % ROW;
+    sls.forEach((r, i) => {
+      const on = i === k;
+      flag(r, "on", on);
+      bump(r.querySelector("code"), on ? track([[0, 1], [0.35, 1], [0.6, 1.1], [1.0, 1]], lt) : 1);
+      css(r.querySelector(".ar"), "transform", on ? `translateX(${track([[0, 0], [0.25, 4], [0.6, 0]], lt).toFixed(1)}px)` : "");
     });
   }
+  story($("slash"), slash, { start: 0 });
 
-  // ---- 許可の確認の見本: 話した言葉ごとに、選ぶ選択肢が変わる（CLI で確かめた対応） ----
-  const PERM = [["はい", 0], ["今後は聞かないで", 1], ["いいえ", 2], ["2番", 1]];
-  let permAt = 0, permOn = false;
-  function perm(now) {
-    const SEG = 2.6, t = reduce ? 1.5 : (now - permAt) / 1000;
-    const [said, sel] = PERM[Math.floor(t / SEG) % PERM.length], lt = t % SEG;
-    put($("permSaid"), `「${said.slice(0, Math.ceil(said.length * prog(lt, 0.1, 0.5)))}」`);
-    const cmd = "swift test --filter StorageMigrationTests";
-    put($("permTerm"), lines(promptLines(cmd, lt < 0.8 ? 0 : sel, lt >= 0.8)));
+  // ファイル名: カタカナに印が付き、直した名前が出直す
+  const fxs = $$("#fnames .fx");
+  function fnames(t) {
+    const ROW = 2.4, k = Math.floor(t / ROW) % fxs.length, lt = t % ROW;
+    fxs.forEach((r, i) => {
+      const on = i === k, o = r.querySelector(".o");
+      flag(r.querySelector(".hk"), "x", on && lt > 0.3);
+      const back = on ? (lt < 0.25 ? 1 - prog(lt, 0, 0.2) : out(prog(lt, 0.8, 1.3))) : 1;
+      rise(o, back, 8, 4);
+      bump(r.querySelector(".fnm"), on ? track([[1.2, 1], [1.45, 1.08], [1.8, 1]], lt) : 1);
+    });
   }
+  story($("fnames"), fnames, { start: 0 });
 
-  function frame(now) {
-    if (heroOn) hero(now);
-    if (permOn) perm(now);
-    requestAnimationFrame(frame);
+  // 話した言葉に印を付けて、入力した文を出し直す（「送信」の見本と、普段の文章の見本）
+  function pairStory(box, { SEG = 6, delay = 0 } = {}) {
+    const marks = $$(".hf, .hc", box.querySelector(".a")), b = box.querySelector(".b"), ent = b.querySelector(".ent");
+    return (T) => {
+      const lt = (T + delay) % SEG;
+      const reset = lt > 2.0 && lt < 2.4;
+      marks.forEach((m) => flag(m, "x", !reset));
+      if (lt < 2.0) fade(b, 1 - prog(lt, 1.6, 2.0)), css(b, "transform", ""), css(b, "filter", "");
+      else rise(b, out(prog(lt, 2.9, 3.4)), 10, 4);
+      if (ent) css(ent, "transform", `translateY(${track([[3.6, 0], [3.75, 2], [3.95, 0]], lt).toFixed(1)}px)`);
+    };
   }
-  requestAnimationFrame(frame);
-  watch($("stage"), (v) => { heroOn = v; });
-  watch($("perm"), (v) => { if (v && !permOn) permAt = performance.now(); permOn = v; }, { threshold: 0.2 });
-  perm(performance.now());
-  if (reduce) { hero(0); perm(0); }
+  story($("send"), pairStory($("send"), { SEG: 5.4 }));
+  $$(".ex").forEach((ex, i) => story(ex, pairStory(ex, { SEG: 6.4, delay: 6.4 - (i % 3) * 0.7 - 0.3 }), { start: 0, wait: 1.2 }));
 
-  // 現れる要素（見本の線と入力も、このとき動く）
-  document.querySelectorAll(".reveal").forEach((el) => {
-    if (reduce) { el.classList.add("in"); return; }
-    watch(el, (v) => { if (v) el.classList.add("in"); }, { threshold: 0.18, rootMargin: "0px 0px -6% 0px" });
+  // ---- 5. アプリの種類が流れ続ける（1 周で、ちょうど 1 組ぶん動く） ----
+  const mq = $("mqTrack"), set1 = mq.firstElementChild;
+  if (still) mq.classList.add("static");
+  const set2 = set1.cloneNode(true);
+  set2.setAttribute("aria-hidden", "true");
+  set2.removeAttribute("aria-label");
+  if (!still) mq.appendChild(set2);
+  let setW = 0;
+  const measure = () => { setW = set1.getBoundingClientRect().width + parseFloat(getComputedStyle(mq).columnGap || 16); };
+  addEventListener("resize", measure);
+  story($("mq"), (t) => { if (!setW) measure(); css(mq, "transform", `translateX(${(-((t * 36) % setW)).toFixed(1)}px)`); }, { start: 0, wait: 0 });
+
+  // ---- 6. タイル ----
+  // アプリごとの文体: メールの行とチャットの行に、交互に印が付く
+  const styleRows = $$("#styleDemo .m");
+  story($("styleDemo"), (t) => {
+    const k = Math.floor((t % 4) / 2);
+    styleRows.forEach((r, i) => flag(r, "on", i === k));
+    bump(styleRows[1].querySelector(".bub"), k === 1 ? track([[2.1, 1], [2.35, 1.06], [2.7, 1]], t % 4) : 1);
+  }, { start: 0 });
+
+  // 辞書: 新しい語が上に入り、ほかの語が 1 段ずつ下がり、いちばん下の語が抜ける
+  const drs = $$("#dict .dr"), STEP = 52, DSEG = 2.8;
+  function dict(t) {
+    const c = Math.floor(t / DSEG), lt = t % DSEG, k = inOut(prog(lt, DSEG - 0.9, DSEG));
+    drs.forEach((r, i) => {
+      const from = (i + c) % 4, to = (i + c + 1) % 4;
+      let y, op;
+      if (from === 3 && to === 0) { y = lerp(-STEP, 0, k); op = k; }
+      else if (to === 3) { y = lerp(2 * STEP, 3 * STEP, k); op = 1 - k; }
+      else { y = lerp(from * STEP, to * STEP, k); op = 1; }
+      if (from === 3 && k === 0) op = 0;
+      css(r, "transform", `translateY(${y.toFixed(1)}px)`);
+      css(r, "opacity", op >= 1 ? "" : op.toFixed(3));
+      css(r, "filter", from === 3 && k < 1 ? `blur(${((1 - k) * 4).toFixed(1)}px)` : "");
+    });
+  }
+  story($("dict"), dict, { start: 0 });
+
+  // 文体の学習: 5 回目、6 回目で輪が満ち、もう一度 4 回目まで回る
+  const arc = $("ringArc"), ringNum = $("ringNum"), pulse = $("ring").querySelector(".pulse"), C = 364.4;
+  function ring(t) {
+    const lt = t % 6.6;
+    let f, op = 1;
+    if (lt < 4) f = track([[0, 4], [1.6, 4], [2.2, 5], [2.8, 5], [3.4, 6]], lt), op = 1 - prog(lt, 3.7, 4.0);
+    else f = track([[4.2, 0], [5.6, 4]], lt), op = prog(lt, 4.0, 4.2);
+    css(arc, "strokeDashoffset", (C * (1 - f / 6)).toFixed(1));
+    css(arc, "opacity", op >= 1 ? "" : op.toFixed(3));
+    put(ringNum, `${Math.round(f)}/6`);
+    const p = prog(lt, 3.4, 4.2);
+    css(pulse, "opacity", p > 0 && p < 1 ? (0.6 * (1 - p)).toFixed(3) : "0");
+    css(pulse, "transform", `scale(${(1 + p * 0.25).toFixed(3)})`);
+  }
+  story($("ring"), ring, { start: 0 });
+
+  // 言語: 1 つずつ点く
+  const langs = $$("#langs span");
+  story($("langs"), (t) => { const k = Math.floor(t / 0.7) % langs.length; langs.forEach((s, i) => flag(s, "on", i === k)); }, { start: 0 });
+
+  // 画面の表記: 画面の名前に印が付き、聞き取った名前に線が引かれ、直した名前が出る
+  const ctxName = $("ctx").querySelector(".scr b"), ctxRaw = $("ctx").querySelector(".hf"), ctxOut = $("ctx").querySelector(".o");
+  story($("ctx"), (t) => {
+    const lt = t % 5;
+    flag(ctxRaw, "x", !(lt > 1.9 && lt < 2.6));
+    flag(ctxName, "on", lt > 2.2 && lt < 3.4);
+    if (lt < 2.0) fade(ctxOut, 1 - prog(lt, 1.5, 1.9)), css(ctxOut, "transform", ""), css(ctxOut, "filter", "");
+    else rise(ctxOut, out(prog(lt, 3.0, 3.5)), 8, 4);
+  }, { start: 0 });
+
+  // 書き換え: 頼む言葉を話し直す
+  const askSaid = $("askSaid"), ASK = "もっとていねいに";
+  story($("ask"), (t) => {
+    const lt = t % 6;
+    const n = lt < 1.6 ? ASK.length : lt < 2.0 ? Math.ceil(ASK.length * (1 - prog(lt, 1.6, 1.95))) : Math.ceil(ASK.length * prog(lt, 2.3, 2.3 + ASK.length * 0.06));
+    put(askSaid, `「${ASK.slice(0, n)}」`);
+    bump($("ask").querySelector("mark"), track([[3.3, 1], [3.5, 1.02], [3.8, 1]], lt));
+  }, { start: 0 });
+
+  // エンジン: 上から順に印が付く
+  const engs = $$("#eng .m");
+  story($("eng"), (t) => { const k = Math.floor(t / 1.3) % engs.length; engs.forEach((r, i) => flag(r, "on", i === k)); }, { start: 0 });
+
+  // ---- 8. 使い方: 押す → 話す → 入る を順に見せる ----
+  const steps = $$("#howSteps .step"), howBars = $("howBars"), howText = $("howText"), HOW = "資料は明日までに送ります。";
+  for (let i = 0; i < 9; i++) howBars.appendChild(document.createElement("i"));
+  const hb = [...howBars.children];
+  hb.forEach((b) => { b._rest = 0.14; });
+  story($("howSteps"), (t) => {
+    const lt = t % 7.2, k = Math.min(2, Math.floor(lt / 2.4));
+    steps.forEach((s, i) => flag(s, "on", i === k));
+    const press = Math.min(prog(lt, 0.4, 0.55), 1 - prog(lt, 4.8, 4.95));
+    css($("howKey").firstElementChild, "transform", press ? `translateY(${(press * 8).toFixed(1)}px)` : "");
+    flag($("howKey"), "on", press > 0.5);
+    drawBars(hb, t, Math.min(prog(lt, 2.4, 2.8), 1 - prog(lt, 4.4, 4.8)), 2.6);
+    const n = lt < 4.8 ? (lt < 0.3 ? HOW.length : 0) : Math.ceil(HOW.length * prog(lt, 4.9, 6.0));
+    put(howText, HOW.slice(0, lt < 0.3 ? HOW.length : n) || "&nbsp;");
+    fade(howText, lt < 0.3 ? 1 - prog(lt, 0, 0.3) : 1);
+  }, { start: 6.6, rest: 6.6 });
+
+  if (!still) requestAnimationFrame(frame);
+
+  // ---- ページの動き ----
+  // 現れる要素
+  $$(".reveal").forEach((el) => {
+    if (still) { el.classList.add("in"); return; }
+    // 最初の画面にあるものは、見えるかどうかを待たずに次のフレームで現す
+    if (el.closest(".hero")) { requestAnimationFrame(() => requestAnimationFrame(() => el.classList.add("in"))); return; }
+    watch(el, (v) => { if (v) el.classList.add("in"); }, { threshold: 0.15, rootMargin: "0px 0px -8% 0px" });
   });
-  // 文体の学習の輪
-  const arc = $("ringArc");
-  watch(arc, (v) => { if (v) { arc.style.transition = reduce ? "none" : "stroke-dashoffset 1.4s cubic-bezier(0.2,0.8,0.2,1)"; arc.style.strokeDashoffset = (351.9 * (1 - 4 / 6)).toFixed(1); } });
+  // カード: 同じ行のカードは読む順に 85 ミリ秒ずつずらす
+  const grids = new Map();
+  $$(".card").forEach((c) => { const g = c.parentElement; if (!grids.has(g)) grids.set(g, []); grids.get(g).push(c); });
+  const colsOf = new Map([...grids.keys()].map((g) => [g, getComputedStyle(g).gridTemplateColumns.split(" ").length || 1]));
+  grids.forEach((cards, g) => cards.forEach((c, i) => {
+    if (still) { c.classList.add("in"); return; }
+    c.style.setProperty("--d", ((i % colsOf.get(g)) * 0.085).toFixed(3) + "s");
+    watch(c, (v) => { if (v) c.classList.add("in"); }, { threshold: 0.2 });
+  }));
 
-  // ナビの下線
-  const nav = $("nav");
-  addEventListener("scroll", () => nav.classList.toggle("scrolled", scrollY > 8), { passive: true });
+  // 大きな一文: 段落が画面を通るあいだに、文節を読む順に 1 つずつ点ける
+  const tl = $("tl"), tlSec = tl.closest("section"), words = $$("#tl .w");
+  function tagline() {
+    const r = tlSec.getBoundingClientRect(), vh = innerHeight;
+    // 節の上端が画面の半ばに来てから、止めた一文が離れる少し前までに、すべて点ける
+    const p = prog(vh * 0.5 - r.top, 0, r.height - vh * 0.8);
+    words.forEach((w, i) => flag(w, "on", p > (i + 0.5) / words.length));
+    css(twOn, "clipPath", `inset(0 ${((1 - p) * 100).toFixed(2)}% 0 0)`);
+  }
+  // 波形の高さは、話した声の輪郭のような決まった並び
+  const twOn = $("twOn");
+  for (const row of [$("twBase"), twOn]) {
+    row.innerHTML = "<i></i>".repeat(56);
+    [...row.children].forEach((b, i) => { const c = (i - 27.5) / 20; b.style.transform = `scaleY(${(0.12 + 0.88 * Math.exp(-c * c) * Math.abs(Math.sin(i * 0.53) * Math.sin(i * 0.17 + 0.6))).toFixed(3)})`; });
+  }
+  if (still) css(twOn, "clipPath", "none");
+  // ナビ: 暗い節の上では暗くする
+  const nav = $("nav"), agent = $("agent");
+  function navTheme() { const r = agent.getBoundingClientRect(); flag(nav, "dark", r.top < 48 && r.bottom > 48); }
+  let ticking = false;
+  function onScroll() {
+    if (ticking) return;
+    ticking = true;
+    requestAnimationFrame(() => { ticking = false; if (!still) tagline(); navTheme(); });
+  }
+  addEventListener("scroll", onScroll, { passive: true });
+  onScroll();
+
+  // ナビ: いま読んでいる節に印を付ける
+  const spy = new Map($$(".links a").map((a) => [a.getAttribute("href").slice(1), a]));
+  const spyIO = "IntersectionObserver" in window && new IntersectionObserver((es) => {
+    es.forEach((e) => {
+      if (!e.isIntersecting) return;
+      spy.forEach((a, id) => { if (id === e.target.id) a.setAttribute("aria-current", "true"); else a.removeAttribute("aria-current"); });
+    });
+  }, { rootMargin: "-45% 0px -50% 0px" });
+  if (spyIO) $$("main > section").forEach((s) => spyIO.observe(s));
+
+  // スマートフォンのメニュー
+  const menuBtn = $("menuBtn"), menu = $("menu");
+  function setMenu(open) {
+    root.classList.toggle("menu-open", open);
+    menuBtn.setAttribute("aria-expanded", String(open));
+    menuBtn.setAttribute("aria-label", open ? "メニューを閉じる" : "メニューを開く");
+    menu.inert = !open;
+    menu.setAttribute("aria-hidden", String(!open));
+    document.body.style.overflow = open ? "hidden" : "";
+  }
+  menuBtn.addEventListener("click", () => setMenu(!root.classList.contains("menu-open")));
+  $$("#menu a").forEach((a) => a.addEventListener("click", () => setMenu(false)));
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && root.classList.contains("menu-open")) { setMenu(false); menuBtn.focus(); } });
+  matchMedia("(min-width: 900px)").addEventListener("change", (e) => { if (e.matches) setMenu(false); });
 
   // 動画: 見えている間だけ音なしで再生。ボタンで音を出す
-  document.querySelectorAll(".frame").forEach((box) => {
+  $$(".frame").forEach((box) => {
     const film = box.querySelector("video"), sound = box.querySelector(".sound");
-    watch(film, (v) => { if (v) { film.preload = "auto"; if (!reduce) film.play().catch(() => {}); } else film.pause(); }, { threshold: 0.35 });
+    watch(film, (v) => { if (v) { film.preload = "auto"; if (!still) film.play().catch(() => {}); } else film.pause(); }, { threshold: 0.35 });
     sound.addEventListener("click", () => {
       film.muted = !film.muted;
       if (!film.muted) film.play().catch(() => {});
       sound.setAttribute("aria-pressed", String(!film.muted));
+      sound.querySelector("use").setAttribute("href", film.muted ? "#i-speaker-high" : "#i-speaker-slash");
       sound.querySelector("span").textContent = film.muted ? "音を出す" : "音を消す";
     });
   });

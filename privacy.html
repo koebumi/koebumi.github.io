@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>プライバシーポリシー — Koebumi</title>
+<meta name="description" content="macOSの音声入力アプリKoebumiと、このWebサイトが扱う情報についての説明です。履歴・録音・辞書はこのMacにだけ保存し、クラウドのエンジンを選んだときだけ、選んだサービスに送ります。">
+<link rel="canonical" href="https://koebumi.github.io/privacy.html">
+<meta property="og:type" content="article">
+<meta property="og:url" content="https://koebumi.github.io/privacy.html">
+<meta property="og:title" content="プライバシーポリシー — Koebumi">
+<meta property="og:description" content="履歴・録音・辞書はこのMacにだけ保存し、クラウドのエンジンを選んだときだけ、選んだサービスに送ります。">
+<meta property="og:image" content="https://koebumi.github.io/assets/og.png">
+<meta property="og:locale" content="ja_JP">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@koebumi_app">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light">
+<link rel="icon" href="assets/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"></noscript>
+<style>
+  /* トップページと同じ決まり（色・余白・角丸・文字の段）を、読む文書向けに絞ったもの */
+  :root {
+    --bg: #ffffff; --surface: #f5f5f4; --surface-2: #ececea; --ink: #0a0a0a; --ink-2: #404040; --mute: #6b6b6b; --line: #e5e5e3;
+    --teal: #2b6772; --teal-soft: #dcecef; --orange-soft: #ffe4da;
+    --sans: "Geist", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, "Zen Kaku Gothic New", monospace;
+    --s-25: 2px; --s-50: 4px; --s-75: 8px; --s-100: 12px; --s-200: 16px; --s-300: 24px; --s-400: 32px;
+    --s-500: 40px; --s-600: 48px; --s-700: 64px; --s-800: 80px; --s-900: 96px;
+    --r-sm: 4px; --r-lg: 8px; --r-xl: 12px; --r-2xl: 16px; --r-3xl: 24px; --r-full: 9999px;
+    --base: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; scroll-padding-top: var(--s-900); }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 24px; -webkit-font-smoothing: antialiased; text-autospace: normal; word-break: auto-phrase; overflow-wrap: anywhere; }
+  h1, h2, p, ul { margin: 0; }
+  a { color: inherit; text-underline-offset: 4px; }
+  ::selection { background: var(--orange-soft); }
+  :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .i { width: 16px; height: 16px; fill: currentColor; flex: none; }
+  .skip { position: fixed; left: var(--s-200); top: var(--s-200); z-index: 200; transform: translateY(-200%); padding: var(--s-75) var(--s-100); border-radius: var(--r-lg); background: var(--ink); color: #fff; font-size: 14px; line-height: 20px; text-decoration: none; transition: transform 0.5s var(--base); }
+  .skip:focus { transform: none; }
+  .shell { width: 100%; max-width: 1264px; margin-inline: auto; padding-inline: var(--s-200); }
+  @media (min-width: 640px) { .shell { padding-inline: var(--s-300); } }
+  @media (min-width: 1024px) { .shell { padding-inline: var(--s-400); } }
+  .nav { position: fixed; top: var(--s-200); left: 0; right: 0; z-index: 60; display: flex; justify-content: center; padding-inline: var(--s-200); pointer-events: none; }
+  .nav-bar { pointer-events: auto; display: flex; align-items: center; gap: var(--s-200); padding: var(--s-75); border: 1px solid rgba(10, 10, 10, 0.08); border-radius: var(--r-2xl); background-color: rgba(255, 255, 255, 0.72); box-shadow: 0 8px 32px rgba(10, 10, 10, 0.08); -webkit-backdrop-filter: blur(20px) saturate(1.6); backdrop-filter: blur(20px) saturate(1.6); }
+  .logo { display: flex; align-items: center; gap: var(--s-75); padding-inline: var(--s-50); border-radius: var(--r-lg); font-size: 16px; line-height: 24px; font-weight: 700; text-decoration: none; }
+  .logo img { width: 28px; height: 28px; border-radius: var(--r-lg); }
+  .back { display: inline-flex; align-items: center; gap: var(--s-75); padding: var(--s-75) var(--s-100); border-radius: var(--r-lg); font-size: 14px; line-height: 20px; font-weight: 600; text-decoration: none; transition: background-color 0.3s var(--base); }
+  .back:hover { background-color: rgba(10, 10, 10, 0.05); }
+  .back:active { transform: scale(0.98); }
+  main { padding-block: var(--s-900); }
+  .doc { max-width: 680px; margin-top: var(--s-600); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; line-height: 16px; letter-spacing: 0.1em; color: var(--mute); }
+  h1 { margin-top: var(--s-300); font-size: 36px; line-height: 40px; font-weight: 500; letter-spacing: -0.025em; word-break: keep-all; text-wrap: balance; font-feature-settings: "palt"; }
+  @media (min-width: 768px) { h1 { font-size: 48px; line-height: 1; } }
+  .lead { margin-top: var(--s-300); font-size: 18px; line-height: 28px; color: var(--ink-2); text-wrap: pretty; }
+  .summary { display: grid; gap: var(--s-75); margin-top: var(--s-600); padding: var(--s-300); border-radius: var(--r-3xl); background-color: var(--surface); }
+  .summary p { font-size: 14px; line-height: 20px; color: var(--mute); }
+  .summary ul { display: grid; gap: var(--s-75); padding: 0; list-style: none; }
+  .summary li { display: flex; gap: var(--s-100); font-size: 16px; line-height: 24px; font-weight: 600; }
+  .summary li .i { margin-top: var(--s-50); color: var(--teal); }
+  h2 { margin-top: var(--s-700); font-size: 24px; line-height: 32px; font-weight: 700; font-feature-settings: "palt"; }
+  .doc section > p, .doc section > ul { margin-top: var(--s-200); color: var(--ink-2); text-wrap: pretty; }
+  .doc section > ul { display: grid; gap: var(--s-75); padding-left: var(--s-300); }
+  .doc code { padding: 0 var(--s-50); border-radius: var(--r-sm); background-color: var(--surface); font-family: var(--mono); }
+  .date { margin-top: var(--s-700); font-size: 14px; line-height: 20px; color: var(--mute); }
+  .foot { padding-block: var(--s-700) var(--s-400); }
+  .foot-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--s-300); }
+  .foot nav { display: flex; flex-wrap: wrap; gap: var(--s-75) var(--s-300); font-size: 14px; line-height: 20px; color: var(--ink-2); }
+  .foot nav a { text-decoration: underline; text-decoration-color: transparent; transition: color 0.3s var(--base), text-decoration-color 0.3s var(--base); }
+  .foot nav a:hover, .foot nav a[aria-current="page"] { color: var(--ink); text-decoration-color: var(--ink); }
+  .copy { margin-top: var(--s-600); font-size: 12px; line-height: 16px; color: var(--mute); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-arrow-left" viewBox="0 0 256 256"><path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 256 256"><path d="M229.66,77.66l-128,128a8,8,0,0,1-11.32,0l-56-56a8,8,0,0,1,11.32-11.32L96,188.69,218.34,66.34a8,8,0,0,1,11.32,11.32Z"/></symbol>
+</svg>
+<a class="skip" href="#main">本文へ移動</a>
+<header class="nav">
+  <div class="nav-bar">
+    <a class="logo" href="./" aria-label="Koebumi トップへ"><img src="assets/favicon.png" alt="" width="28" height="28"><span>Koebumi</span></a>
+    <a class="back" href="./"><svg class="i" aria-hidden="true"><use href="#i-arrow-left"/></svg>トップに戻る</a>
+  </div>
+</header>
+
+<main id="main">
+  <div class="shell">
+    <article class="doc">
+      <p class="eyebrow">PRIVACY</p>
+      <h1>プライバシーポリシー</h1>
+      <p class="lead">macOSの音声入力アプリ「Koebumi」と、このWebサイトが扱う情報について説明します。Koebumiのソースコードは<a href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener">GitHub</a>で公開しているので、ここに書いた動きはコードでも確かめられます。</p>
+
+      <div class="summary">
+        <p>要点</p>
+        <ul>
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>履歴・録音・辞書・学習内容は、このMacにだけ保存します</li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>既定の設定では、話した内容をMacの外に送りません</li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>クラウドのエンジンを選んだときだけ、選んだサービスに送ります</li>
+          <li><svg class="i" aria-hidden="true"><use href="#i-check"/></svg>アクセス解析・広告・Cookieは使っていません</li>
+        </ul>
+      </div>
+
+      <section aria-labelledby="p1">
+        <h2 id="p1">1. このMacに保存する情報</h2>
+        <p>履歴（話した内容と整えた文）、録音、辞書、文体の学習内容は、このMacの中にだけ保存します。Koebumiの開発者がこれらを受け取る仕組みはありません。</p>
+        <ul>
+          <li>履歴の保存期間は、無期限・1年・1か月・1週間・24時間・保存しない から選べます。</li>
+          <li>文体の学習は、丁寧さや言い回しの癖だけを覚え、話した内容そのものは保存しません。</li>
+          <li>ClaudeやOpenAI互換のサービスのAPIキーは、macOSのキーチェーンに保存します。</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="p2">
+        <h2 id="p2">2. Macの外に送る情報</h2>
+        <p>既定の設定では、音声認識も整形もAppleのオンデバイスモデルで行い、話した内容をMacの外に送りません。次のエンジンを選んだときだけ、選んだサービスに情報を送ります。</p>
+        <ul>
+          <li>クラウドの音声認識（OpenAI・Groq・OpenAI互換のサーバー）を選ぶと、録音を送ります。</li>
+          <li>クラウドの整形・翻訳・Ask anything（Claude・OpenAI互換のサービス）を選ぶと、書き起こした文を送ります。</li>
+          <li>ClaudeやChatGPTのサブスク（Claude Code・Codex経由）を選ぶと、このMacのClaude CodeやCodexを起動し、それぞれのサービスに書き起こした文を送ります。Koebumiはログインのトークンに触れません。</li>
+        </ul>
+        <p>送った情報は、それぞれのサービスのプライバシーポリシーに従って扱われます。</p>
+      </section>
+
+      <section aria-labelledby="p3">
+        <h2 id="p3">3. 画面の文字の読み取り</h2>
+        <p>人名や用語の表記を画面に合わせるため、Claude CodeやCodexを見分けるため、メールの返信先を読むために、アクセシビリティAPIで画面の文字を読みます。</p>
+        <ul>
+          <li>読んだ内容は保存しません。パスワード欄は読みません。</li>
+          <li>既定では、このMacの中で整形するときだけ使います。AIに渡すのは、画面から拾った人名・用語の一覧だけで、文章そのものは渡しません。</li>
+          <li>Claude CodeやCodexを見分けるために読んだターミナルの文字は、AIにも渡しません。</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="p4">
+        <h2 id="p4">4. そのほかの通信</h2>
+        <ul>
+          <li>新しい版を確かめるため、1日1回GitHubにアクセスします。設定 &gt; 一般 でオフにできます。</li>
+          <li>このMacで動く音声認識モデルを選ぶと、最初の1回だけ、モデルのデータをHugging Faceからダウンロードします。</li>
+          <li>Ask anythingで「YouTubeで猫の動画」のように頼むと、そのWebページをブラウザで開きます。</li>
+        </ul>
+      </section>
+
+      <section aria-labelledby="p5">
+        <h2 id="p5">5. このWebサイト</h2>
+        <p>このWebサイトは、アクセス解析・広告・Cookieを使っていません。GitHub Pagesで公開していて、文字の書体をGoogle Fontsから読み込むため、閲覧するとGitHubとGoogleのサーバーに接続します。</p>
+      </section>
+
+      <section aria-labelledby="p6">
+        <h2 id="p6">6. 問い合わせ</h2>
+        <p>このページの内容についての質問は、<a href="https://github.com/koebumi/koebumi/issues" target="_blank" rel="noopener">GitHubのIssues</a>に送ってください。内容を変えたときは、このページを更新し、下の日付を改めます。</p>
+      </section>
+
+      <p class="date">2026年10月26日 制定</p>
+    </article>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="shell">
+    <div class="foot-top">
+      <a class="logo" href="./" aria-label="Koebumi トップへ"><img src="assets/favicon.png" alt="" width="28" height="28"><span>Koebumi</span></a>
+      <nav aria-label="フッター">
+        <a href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener">ダウンロード</a>
+        <a href="https://github.com/koebumi/koebumi" target="_blank" rel="noopener">GitHub</a>
+        <a href="https://github.com/koebumi/koebumi/issues" target="_blank" rel="noopener">不具合・要望</a>
+        <a href="https://x.com/koebumi_app" target="_blank" rel="noopener">X @koebumi_app</a>
+        <a href="privacy.html" aria-current="page">プライバシーポリシー</a>
+        <a href="https://github.com/koebumi/koebumi/blob/main/LICENSE" target="_blank" rel="noopener">利用規約（MIT&nbsp;License）</a>
+      </nav>
+    </div>
+    <p class="copy">© 2026 Koebumi ・ MIT&nbsp;License</p>
+  </div>
+</footer>
+</body>
+</html>

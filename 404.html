@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ページが見つかりません — Koebumi</title>
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#ffffff">
+<meta name="color-scheme" content="light">
+<!-- どの URL で出ても読めるように、ファイルはサイトの根からのパスで書く -->
+<link rel="icon" href="/assets/favicon.png" type="image/png">
+<link rel="apple-touch-icon" href="/assets/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400..700&family=Geist+Mono:wght@400..500&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap"></noscript>
+<style>
+  :root {
+    --bg: #ffffff; --surface: #f5f5f4; --surface-2: #ececea; --ink: #0a0a0a; --ink-2: #404040; --mute: #6b6b6b;
+    --teal: #2b6772; --teal-soft: #dcecef; --orange: #fe6f47; --orange-soft: #ffe4da;
+    --d-bg: #181818; --d-1: #1f1f1f; --d-3: #313131; --d-mute: #9b9b9b; --d-teal: #84cad5;
+    --sans: "Geist", "Zen Kaku Gothic New", "Hiragino Sans", sans-serif;
+    --mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, "Zen Kaku Gothic New", monospace;
+    --s-50: 4px; --s-75: 8px; --s-100: 12px; --s-200: 16px; --s-300: 24px; --s-400: 32px; --s-600: 48px; --s-700: 64px; --s-900: 96px;
+    --r-sm: 4px; --r-lg: 8px; --r-xl: 12px; --r-2xl: 16px; --r-3xl: 24px; --r-full: 9999px;
+    --base: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { display: grid; place-items: center; padding: var(--s-300) var(--s-200); background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 16px; line-height: 24px; -webkit-font-smoothing: antialiased; text-autospace: normal; word-break: auto-phrase; }
+  h1, p { margin: 0; }
+  :focus-visible { outline: 2px solid var(--teal); outline-offset: 2px; }
+  .i { width: 20px; height: 20px; fill: currentColor; flex: none; }
+  main { display: grid; justify-items: center; gap: var(--s-300); width: min(640px, 100%); text-align: center; }
+  .logo { display: inline-flex; align-items: center; gap: var(--s-75); font-size: 16px; line-height: 24px; font-weight: 700; text-decoration: none; color: inherit; }
+  .logo img { width: 28px; height: 28px; border-radius: var(--r-lg); }
+  /* 話したページが見つからなかった、という見本 */
+  .term { width: 100%; margin-top: var(--s-300); overflow: hidden; border: 1px solid var(--d-3); border-radius: var(--r-2xl); background-color: var(--d-bg); color: #f2f2f2; text-align: left; box-shadow: 0 32px 80px rgba(10, 10, 10, 0.18); }
+  .term .bar { display: flex; gap: var(--s-75); align-items: center; height: 40px; padding-inline: var(--s-200); background-color: var(--d-1); }
+  .term .bar i { width: 12px; height: 12px; border-radius: var(--r-full); background-color: var(--d-3); }
+  .term .scr { padding: var(--s-300); font-family: var(--mono); font-size: 14px; line-height: 20px; overflow-wrap: anywhere; }
+  .t-dim { color: #8a8a8a; } .t-te { color: var(--d-teal); } .t-or { color: var(--orange); }
+  .eyebrow { font-family: var(--mono); font-size: 12px; line-height: 16px; letter-spacing: 0.1em; color: var(--mute); }
+  h1 { font-size: 36px; line-height: 40px; font-weight: 500; letter-spacing: -0.025em; word-break: keep-all; text-wrap: balance; font-feature-settings: "palt"; }
+  @media (min-width: 768px) { h1 { font-size: 48px; line-height: 1; } }
+  .lead { max-width: 480px; color: var(--ink-2); text-wrap: pretty; }
+  .cta { display: flex; flex-wrap: wrap; justify-content: center; gap: var(--s-100); }
+  .btn { display: inline-flex; align-items: center; gap: var(--s-75); padding: var(--s-75) var(--s-100); border-radius: var(--r-xl); background-color: var(--ink); color: #fff; font-size: 16px; line-height: 24px; font-weight: 600; text-decoration: none; white-space: nowrap; transition: transform 0.5s var(--base), background-color 0.3s var(--base); }
+  .btn:hover { background-color: #2a2a2a; transform: translateY(-2px); }
+  .btn:active { transform: scale(0.98); }
+  .btn-2 { background-color: var(--surface); color: var(--ink); }
+  .btn-2:hover { background-color: var(--surface-2); }
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <symbol id="i-arrow-left" viewBox="0 0 256 256"><path d="M224,128a8,8,0,0,1-8,8H59.31l58.35,58.34a8,8,0,0,1-11.32,11.32l-72-72a8,8,0,0,1,0-11.32l72-72a8,8,0,0,1,11.32,11.32L59.31,120H216A8,8,0,0,1,224,128Z"/></symbol>
+  <symbol id="i-download-simple" viewBox="0 0 256 256"><path d="M224,144v64a8,8,0,0,1-8,8H40a8,8,0,0,1-8-8V144a8,8,0,0,1,16,0v56H208V144a8,8,0,0,1,16,0Zm-101.66,5.66a8,8,0,0,0,11.32,0l40-40a8,8,0,0,0-11.32-11.32L136,124.69V32a8,8,0,0,0-16,0v92.69L93.66,98.34a8,8,0,0,0-11.32,11.32Z"/></symbol>
+</svg>
+<main>
+  <a class="logo" href="/" aria-label="Koebumi トップへ"><img src="/assets/favicon.png" alt="" width="28" height="28"><span>Koebumi</span></a>
+  <div class="term" aria-hidden="true">
+    <div class="bar"><i></i><i></i><i></i></div>
+    <div class="scr"><span class="t-te">❯</span> <span id="path">/このページ</span> を開いて<br><span class="t-or">⏺</span> <span class="t-dim">404 Not Found</span></div>
+  </div>
+  <p class="eyebrow">404</p>
+  <h1>ページが<wbr>見つかりません</h1>
+  <p class="lead">URLが変わったか、ページがなくなった可能性があります。トップに戻るか、アプリを直接ダウンロードしてください。</p>
+  <div class="cta">
+    <a class="btn" href="/"><svg class="i" aria-hidden="true"><use href="#i-arrow-left"/></svg>トップに戻る</a>
+    <a class="btn btn-2" href="https://github.com/koebumi/koebumi/releases/latest" target="_blank" rel="noopener"><svg class="i" aria-hidden="true"><use href="#i-download-simple"/></svg>macOS版を無料でダウンロード</a>
+  </div>
+</main>
+<script>
+  // 開こうとしたパスを、見本のターミナルに出す
+  document.getElementById("path").textContent = decodeURIComponent(location.pathname).slice(0, 48) || "/";
+</script>
+</body>
+</html>
